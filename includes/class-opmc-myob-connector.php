@@ -1766,49 +1766,32 @@ if (!class_exists('Opmc_Myob_Connector')):
 		
 		
 		/**
-		 * Checks if order should be created instead of invoice, factoring in custom user meta
+		 * Checks if order should be created instead of invoice, based on payment method.
 		 * 
 		 * @param $order_id - The id for the WooCommerce order.
 		 */
 		public function is_create_order_instead_of_invoice($order_id) {
-		// Default behavior: create orders for all customers (not invoices)
 		$create_order = 'yes';
 		$wc_order = wc_get_order($order_id);
-		$designation_value = '';
-		$designation_key = '';
+		$payment_method = '';
+		$payment_method_title = '';
 
 		if ($wc_order) {
-			$customer_id = $wc_order->get_customer_id();
-			if ($customer_id) {
-				$designation_candidates = array(
-					'myob_user_designation',
-					'myobuserdesignation',
-					'myobuserdesignatino',
-				);
+			$payment_method = strtolower(trim((string) $wc_order->get_payment_method()));
+			$payment_method_title = strtolower(trim((string) $wc_order->get_payment_method_title()));
 
-				foreach ($designation_candidates as $candidate_key) {
-					$value = get_user_meta($customer_id, $candidate_key, true);
-					if ('' !== trim((string) $value)) {
-						$designation_key = $candidate_key;
-						$designation_value = (string) $value;
-						break;
-					}
-				}
-
-				// For company-designated customers: create invoice (which will become a quote)
-				if (strtolower(trim($designation_value)) === 'company') {
-					$create_order = 'no';
-				}
+			if ('pay_later' === $payment_method || 'on account' === $payment_method_title) {
+				$create_order = 'no';
 			}
 		}
 
 		$this->create_wc_debug_log(
 			sprintf(
-				'[Checkout Decision] order_id=%d customer_id=%d default_create_order=yes designation_key=%s designation_value=%s final_create_order=%s',
+				'[Checkout Decision] order_id=%d customer_id=%d payment_method=%s payment_method_title=%s final_create_order=%s',
 				(int) $order_id,
 				(int) ($wc_order ? $wc_order->get_customer_id() : 0),
-				$designation_key ? $designation_key : 'none',
-				$designation_value !== '' ? $designation_value : 'empty',
+				$payment_method !== '' ? $payment_method : 'empty',
+				$payment_method_title !== '' ? $payment_method_title : 'empty',
 				(string) $create_order
 			)
 		);
@@ -1817,47 +1800,35 @@ if (!class_exists('Opmc_Myob_Connector')):
 		}
 
 		/**
-		 * Checks if quote should be created for company-designated customers
-		 * Even if "Create Orders Instead of Invoices" is enabled, company customers get quotes
+		 * Checks if quote should be created for on-account payments.
+		 * Even if "Create Orders Instead of Invoices" is enabled, on-account orders get quotes.
 		 * 
 		 * @param $order_id - The id for the WooCommerce order.
 		 */
 		public function should_create_quote_for_company($order_id) {
 			$wc_order = wc_get_order($order_id);
-			$designation_value = '';
+			$payment_method = '';
+			$payment_method_title = '';
+			$should_create_quote = false;
 
 			if ($wc_order) {
-				$customer_id = $wc_order->get_customer_id();
-				if ($customer_id) {
-					$designation_candidates = array(
-						'myob_user_designation',
-						'myobuserdesignation',
-						'myobuserdesignatino',
-					);
-
-					foreach ($designation_candidates as $candidate_key) {
-						$value = get_user_meta($customer_id, $candidate_key, true);
-						if ('' !== trim((string) $value)) {
-							$designation_value = (string) $value;
-							break;
-						}
-					}
-				}
+				$payment_method = strtolower(trim((string) $wc_order->get_payment_method()));
+				$payment_method_title = strtolower(trim((string) $wc_order->get_payment_method_title()));
+				$should_create_quote = ('pay_later' === $payment_method || 'on account' === $payment_method_title);
 			}
 
-			$is_company = (strtolower(trim($designation_value)) === 'company');
-			
 			$this->create_wc_debug_log(
 				sprintf(
-					'[Company Quote Decision] order_id=%d customer_id=%d designation=%s is_company=%s',
+					'[Quote Decision] order_id=%d customer_id=%d payment_method=%s payment_method_title=%s create_quote=%s',
 					(int) $order_id,
 					(int) ($wc_order ? $wc_order->get_customer_id() : 0),
-					$designation_value !== '' ? $designation_value : 'not set',
-					$is_company ? 'yes' : 'no'
+					$payment_method !== '' ? $payment_method : 'empty',
+					$payment_method_title !== '' ? $payment_method_title : 'empty',
+					$should_create_quote ? 'yes' : 'no'
 				)
 			);
 
-			return $is_company;
+			return $should_create_quote;
 		}
 
 
@@ -1874,14 +1845,16 @@ if (!class_exists('Opmc_Myob_Connector')):
 		 */
 		public function order_from_status_transition_hook($order_id, $old_status, $new_status)
 		{
+			$should_create_quote = $this->should_create_quote_for_company($order_id);
 			$this->create_wc_debug_log(
 				sprintf(
-					'[Status Transition] order_id=%d old_status=%s new_status=%s only_sync_inventory=%s create_orders_on_hold=%s',
+					'[Status Transition] order_id=%d old_status=%s new_status=%s only_sync_inventory=%s create_orders_on_hold=%s create_quote=%s',
 					(int) $order_id,
 					(string) $old_status,
 					(string) $new_status,
 					(string) $this->enable_only_sync_item_inventory,
-					(string) $this->create_orders_when_on_hold
+					(string) $this->create_orders_when_on_hold,
+					$should_create_quote ? 'yes' : 'no'
 				)
 			);
 			$this->create_wc_log("ORDER WITH ID $order_id RECEIVED FROM woocommerce_order_status_changed");
@@ -1907,12 +1880,8 @@ if (!class_exists('Opmc_Myob_Connector')):
 					$this->add_myob_order_to_queue($order_id);
 				} else if ('failed' == $old_status && 'processing' == $new_status) {
 					$this->add_myob_order_to_queue($order_id);
-				} else if ('on-hold' == $old_status && 'processing' == $new_status && 'no' == $this->create_order_instead_of_invoice) {
-				} else if ('on-hold' == $old_status && 'processing' == $new_status && 'no' == $this->is_create_order_instead_of_invoice($order_id)) {
-					$this->conver_order_to_invoice_processing($order_id);
-				} else if ('on-hold' == $old_status && 'completed' == $new_status && 'no' == $this->create_order_instead_of_invoice) {
-				} else if ('on-hold' == $old_status && 'completed' == $new_status && 'no' == $this->is_create_order_instead_of_invoice($order_id)) {
-					$this->conver_order_to_invoice_processing($order_id);
+				} else if ('on-hold' == $old_status && ('processing' == $new_status || 'completed' == $new_status)) {
+					$this->create_wc_log("Order $order_id moved from on-hold to $new_status. Invoice conversion is disabled; keeping MYOB document as " . ($should_create_quote ? 'quote' : 'order') . '.');
 				}
 			} // if ('yes' != $this->enable_only_sync_item_inventory)
 		}
@@ -2158,10 +2127,10 @@ if (!class_exists('Opmc_Myob_Connector')):
 					$this->create_wc_log('Calling /Sale/Invoice/Item');
 				}
 
-				// If customer is designated as 'company', create quote instead of invoice
+				// If the payment method is on account, create quote instead of invoice
 				if ($this->should_create_quote_for_company($order_id)) {
 					$apiurl = str_replace('/Sale/Invoice/', '/Sale/Quote/', $apiurl);
-					$this->create_wc_log('Customer is company designated - Converting invoice endpoint to quote: ' . $apiurl);
+					$this->create_wc_log('Payment method is on account - Converting invoice endpoint to quote: ' . $apiurl);
 				}
 
 				$response = $this->remote_post_json($apiurl, $post_data);
@@ -2398,11 +2367,11 @@ if (!class_exists('Opmc_Myob_Connector')):
 					$this->create_wc_log('Calling /Sale/Invoice/Item');
 				}
 
-				// If customer is designated as 'company', create quote instead of order
+				// If the payment method is on account, create quote instead of order
 				$final_endpoint = $apiurl;
 				if ($this->should_create_quote_for_company($order_id)) {
 					$final_endpoint = str_replace('/Sale/Order/', '/Sale/Quote/', $apiurl);
-					$this->create_wc_log('Customer is company designated - Converting order endpoint to quote: ' . $final_endpoint);
+					$this->create_wc_log('Payment method is on account - Converting order endpoint to quote: ' . $final_endpoint);
 				}
 
 				$this->create_wc_debug_log(
@@ -2574,16 +2543,14 @@ if (!class_exists('Opmc_Myob_Connector')):
 			$this->set_order_debug_context($order_id, 'place_order');
 			$this->write_order_debug_log('Starting place_order().');
 
-			$config = get_option('woocommerce_MYOB_integrations_settings');
-			$this->create_order_instead_of_invoice = isset($config['WC_OPMC_create_order_instead_of_invoice']) ? $config['WC_OPMC_create_order_instead_of_invoice'] : 'no';
+			$this->create_order_instead_of_invoice = 'yes';
 
 			$this->create_wc_log("Creating order $order_id");
 			$this->create_wc_debug_log(
 				sprintf(
-					'[Place Order Start] order_id=%s manual_payment=%s setting_create_order=%s',
+					'[Place Order Start] order_id=%s manual_payment=%s mode=order_or_quote_only',
 					is_scalar($order_id) ? (string) $order_id : gettype($order_id),
-					$has_manual_payment ? 'yes' : 'no',
-					(string) $this->create_order_instead_of_invoice
+					$has_manual_payment ? 'yes' : 'no'
 				)
 			);
 			if (is_int($order_id) == false) {
@@ -2633,7 +2600,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 				if (null !== $customer->UID) {
 
 					try {
-						// Always create orders (or quotes for company customers), never invoices
+						// Always create orders (or quotes for on-account payments), never invoices
 						$wc_order = wc_get_order($order_id);
 						$customer_id = $wc_order ? $wc_order->get_customer_id() : 0;
 						$is_company = $this->should_create_quote_for_company($order_id);
@@ -2676,23 +2643,11 @@ if (!class_exists('Opmc_Myob_Connector')):
 						$this->create_wc_debug_log('[Place Order Error] Throwable for Woo order #' . (int) $order_id . ': ' . $e->getMessage(), 'error');
 
 						$order = new WC_Order($order_id);
-						$note;
-						if ('yes' == $this->is_create_order_instead_of_invoice($order_id)) {
-
-							$note = '<span>An error has occurred when syncing your order with MYOB.</span>
-								<span class="moretext"> ' . $e->getMessage() . ' 
-								</span>
-								<span class="moreless-button">Read more</span>';
-							$this->create_wc_log('[Order Export] [Error] [An error has occurred when syncing your order #' . $order_id . ' with MYOB. ' . print_r($e->getMessage(), 1) . ']');
-
-						} else {
-
-							$note = '<span>An error has occurred when syncing your order with MYOB.</span>
-								<span class="moretext"> ' . $e->getMessage() . ' 
-								</span>
-								<span class="moreless-button">Read more</span>';
-							$this->create_wc_log('[Order Export] [Error] [An error has occurred when syncing your order #' . $order_id . ' with MYOB. ' . print_r($e->getMessage(), 1) . ']');
-						}
+						$note = '<span>An error has occurred when syncing your order with MYOB.</span>
+							<span class="moretext"> ' . $e->getMessage() . ' 
+							</span>
+							<span class="moreless-button">Read more</span>';
+						$this->create_wc_log('[Order Export] [Error] [An error has occurred when syncing your order #' . $order_id . ' with MYOB. ' . print_r($e->getMessage(), 1) . ']');
 						$order->add_order_note($note);
 						$this->create_wc_log('add_order_note: ' . $note);
 						$this->send_text_mail_to_admin($order_id);
@@ -3923,10 +3878,10 @@ if (!class_exists('Opmc_Myob_Connector')):
 				$this->create_wc_log('Calling /Sale/Invoice/Item');
 			}
 
-			// If customer is designated as 'company', create quote instead of invoice
+			// If the payment method is on account, create quote instead of invoice
 			if ($this->should_create_quote_for_company($order_id)) {
 				$apiurl = str_replace('/Sale/Invoice/', '/Sale/Quote/', $apiurl);
-				$this->create_wc_log('Customer is company designated - Converting invoice endpoint to quote: ' . $apiurl);
+				$this->create_wc_log('Payment method is on account - Converting invoice endpoint to quote: ' . $apiurl);
 			}
 
 			$response = $this->remote_post_json($apiurl, $post_data);
