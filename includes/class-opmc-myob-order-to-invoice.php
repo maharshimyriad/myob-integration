@@ -468,7 +468,7 @@ class Opmc_Myob_Order_To_Invoice {
 			'TotalAmount' => $dollar_format($this->order->get_total()),
 			'Category' => null,
 			'Salesperson' => array(
-				'UID' => '01b91321-45fa-481e-aa74-4a659284ed71',
+				'UID' => '705fc77b-24b5-4b4e-9ddd-00e24f2744bc',
 				'Name' => 'Website Sales',
 				'DisplayID' => '*None',
 			),
