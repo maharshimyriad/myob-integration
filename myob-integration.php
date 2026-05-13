@@ -174,6 +174,7 @@ if (!class_exists('WC_MYOB_Integration')):
 			add_action('myob_process_product_sync', array($this, 'sync_product_from_myob_to_woo'));
 			add_action('admin_notices', array($this, 'admin_notices'));
 			add_action('admin_menu', array($this, 'register_myob_order_tools_page'));
+			add_action('admin_menu', array($this, 'register_myob_salespersons_page'));
 
 			// Scripts
 			add_action('admin_enqueue_scripts', array($this, 'settings_scripts'));
@@ -187,6 +188,7 @@ if (!class_exists('WC_MYOB_Integration')):
 			add_action('wp_ajax_MYOB_view_product_by_sku_ajax', 'MYOB_view_product_by_sku_ajax');
 			add_action('wp_ajax_MYOB_sync_order_by_number_ajax', 'MYOB_sync_order_by_number_ajax');
 			add_action('wp_ajax_MYOB_view_order_by_number_ajax', 'MYOB_view_order_by_number_ajax');
+			add_action('wp_ajax_MYOB_view_salespersons_ajax', 'MYOB_view_salespersons_ajax');
 			add_action('wp_ajax_MYOB_import_product_to_myob', 'MYOB_import_product_to_myob');
 			add_action('wp_ajax_MYOB_reload_accounts_list_ajax', 'MYOB_reload_accounts_list_ajax');
 			add_action('wp_ajax_opmc_myob_view_debug_logs', 'opmc_myob_view_debug_logs');
@@ -376,6 +378,23 @@ if (!class_exists('WC_MYOB_Integration')):
 		public function render_myob_order_tools_page()
 		{
 			include WC_MYOB_INTEGRATION_PLUGINDIR . 'includes/admin-order-tools-page.php';
+		}
+
+		public function register_myob_salespersons_page()
+		{
+			add_submenu_page(
+				'woocommerce',
+				__('MYOB Salespersons', 'wc-myob-integration'),
+				__('MYOB Salespersons', 'wc-myob-integration'),
+				'manage_woocommerce',
+				'wc-myob-salespersons',
+				array($this, 'render_myob_salespersons_page')
+			);
+		}
+
+		public function render_myob_salespersons_page()
+		{
+			include WC_MYOB_INTEGRATION_PLUGINDIR . 'includes/admin-salespersons-page.php';
 		}
 
 
@@ -1295,6 +1314,41 @@ function MYOB_view_order_by_number_ajax() {
 		exit;
 	} catch (Throwable $e) {
 		$connector->create_wc_log('[Exception] Error viewing order: ' . $e->getMessage());
+
+		wp_send_json(array(
+			'success' => false,
+			'message' => 'Error: ' . $e->getMessage(),
+		));
+		exit;
+	}
+}
+
+function MYOB_view_salespersons_ajax() {
+	$connector = new Opmc_Myob_Connector();
+	$connector->create_wc_log('========== MYOB_view_salespersons_ajax() - START ==========');
+
+	$nonce = isset($_POST['security']) ? sanitize_text_field(wp_unslash($_POST['security'])) : '';
+	if (empty($nonce) || !wp_verify_nonce($nonce, 'opmc_myob_security')) {
+		wp_send_json(array(
+			'success' => false,
+			'message' => 'Security verification failed.',
+		));
+		exit;
+	}
+
+	$search = isset($_POST['search']) ? sanitize_text_field(wp_unslash($_POST['search'])) : '';
+
+	try {
+		$salespersons = $connector->get_myob_salespersons($search);
+
+		wp_send_json(array(
+			'success' => true,
+			'message' => sprintf('Loaded %d salesperson record(s) from MYOB.', count($salespersons)),
+			'salespersons' => $salespersons,
+		));
+		exit;
+	} catch (Throwable $e) {
+		$connector->create_wc_log('[Exception] Error viewing salespersons: ' . $e->getMessage());
 
 		wp_send_json(array(
 			'success' => false,

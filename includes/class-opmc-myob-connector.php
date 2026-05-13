@@ -851,6 +851,47 @@ if (!class_exists('Opmc_Myob_Connector')):
 			return $job_codes;
 		}
 
+		public function get_myob_salespersons($search = '')
+		{
+			$params = array('$top' => 1000);
+			$response = $this->remote_get_json($this->full_endpoint . '/Contact/Employee', $params);
+			$items = (is_object($response) && isset($response->Items) && is_array($response->Items)) ? $response->Items : array();
+			$search_value = strtolower(trim((string) $search));
+			$salespersons = array();
+
+			foreach ($items as $item) {
+				$mapped = array(
+					'UID' => isset($item->UID) ? (string) $item->UID : '',
+					'Name' => isset($item->Name) ? (string) $item->Name : '',
+					'DisplayID' => isset($item->DisplayID) ? (string) $item->DisplayID : '',
+					'Email' => isset($item->Email) ? (string) $item->Email : '',
+					'Phone' => isset($item->Phone1) ? (string) $item->Phone1 : '',
+					'IsActive' => isset($item->IsActive) ? (bool) $item->IsActive : false,
+					'raw' => $item,
+				);
+
+				if ($search_value !== '') {
+					$haystack = strtolower(
+						$mapped['UID'] . ' ' .
+						$mapped['Name'] . ' ' .
+						$mapped['DisplayID'] . ' ' .
+						$mapped['Email'] . ' ' .
+						$mapped['Phone']
+					);
+
+					if (false === strpos($haystack, $search_value)) {
+						continue;
+					}
+				}
+
+				$salespersons[] = $mapped;
+			}
+
+			$this->create_wc_log('[MYOB API Request] [Success] [Salespersons fetched successfully. Count: ' . count($salespersons) . ']');
+
+			return $salespersons;
+		}
+
 
 		public function reload_accounts_list()
 		{
