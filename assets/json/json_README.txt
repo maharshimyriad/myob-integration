@@ -1,0 +1,1 @@
+This folder exists to house json resources for use in plugin processing.

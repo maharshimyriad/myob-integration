@@ -1,0 +1,25 @@
+# Ignore the vendor directory
+/vendor/
+
+# Ignore products.json file
+/assets/json/products.json
+
+# Ignore Composer dependencies
+composer.lock
+
+# Ignore any node_modules if you use Node.js
+/node_modules/
+
+# Ignore temporary files
+*.log
+*.tmp
+.DS_Store
+
+# Ignore IDE/editor config files
+.vscode/
+.idea/
+
+# Ignore OS-specific files
+Thumbs.db
+
+*.zip
