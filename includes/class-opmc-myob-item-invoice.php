@@ -411,25 +411,41 @@ class Opmc_Myob_Item_Invoice {
 
 	public function set_address() {
 
-		if ('' == $this->order->get_address('shipping')['address_2']) {
-			$S_streetaddress = '';
-		} else {
-			$S_streetaddress = $this->order->get_address('shipping')['address_2'];
-		}
+		$use_shipping = '' !== trim((string) $this->order->get_address('shipping')['address_1']);
+		$address_type = $use_shipping ? 'shipping' : 'billing';
+		$address = $this->order->get_address($address_type);
 
-		if ('' == $this->order->get_address('billing')['address_2']) {
-			$B_streetaddress = '';
-		} else {
-			$B_streetaddress = $this->order->get_address('shipping')['address_2'];
-		}
-		
-		if ('' == $this->order->get_address('shipping')['address_1']) {
+		$company = 'shipping' === $address_type
+			? trim((string) $this->order->get_shipping_company())
+			: trim((string) $this->order->get_billing_company());
+		$first_name = 'shipping' === $address_type
+			? trim((string) $this->order->get_shipping_first_name())
+			: trim((string) $this->order->get_billing_first_name());
+		$last_name = 'shipping' === $address_type
+			? trim((string) $this->order->get_shipping_last_name())
+			: trim((string) $this->order->get_billing_last_name());
+		$person_line = trim($first_name . ' ' . $last_name);
 
-			$this->address = $this->order->get_billing_last_name() . ' ' . $this->order->get_billing_first_name() . ', ' . $this->order->get_address('billing')['address_1'] . $S_streetaddress . ', ' . $this->order->get_billing_city() . ', ' . $this->order->get_billing_state() . ', ' . $this->order->get_billing_postcode() . ', ' . $this->order->get_billing_country();
+		$street_parts = array_filter(array(
+			trim((string) $address['address_1']),
+			trim((string) $address['address_2']),
+		));
+		$locality_parts = array_filter(array(
+			trim((string) $address['city']),
+			trim((string) $address['state']),
+			trim((string) $address['postcode']),
+			trim((string) $address['country']),
+		));
+		$address_line = implode(', ', array_filter(array(
+			implode(' ', $street_parts),
+			implode(', ', $locality_parts),
+		)));
 
-		} else {
-			$this->address = $this->order->get_shipping_last_name() . ' ' . $this->order->get_shipping_first_name() . ', ' . $this->order->get_address('shipping')['address_1'] . $B_streetaddress . ', ' . $this->order->get_shipping_city() . ', ' . $this->order->get_shipping_state() . ', ' . $this->order->get_shipping_postcode() . ', ' . $this->order->get_shipping_country();
-		}
+		$this->address = implode("\n", array_filter(array(
+			$company,
+			$person_line,
+			$address_line,
+		)));
 	}
 
 	public function generate_post_data() { 
