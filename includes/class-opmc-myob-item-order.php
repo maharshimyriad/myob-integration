@@ -89,7 +89,7 @@ class Opmc_Myob_Item_Order {
 
 		$line_item = array(
 				'Type' => 'Transaction',
-				'Description' => $item_data->get_name(),
+				'Description' => '',
 				'ShipQuantity' => $item_data->get_quantity(),
 				'UnitPrice' => number_format((float) $unit_price, 2, '.', ''),
 				'DiscountPercent' => 0,
@@ -183,7 +183,7 @@ class Opmc_Myob_Item_Order {
 		$income_account = $wc_settings['WC_MYOB_income_account'];
 		$line_item = array(
 				'Type' => 'Transaction',
-				'Description' => $item_data->get_name(),
+				'Description' => '',
 				'UnitOfMeasure' => null,
 				'UnitCount' => $item_data->get_quantity(),
 				'UnitPrice' => number_format((float) $unit_price, 2, '.', ''),
@@ -297,7 +297,7 @@ class Opmc_Myob_Item_Order {
 		$income_account = $wc_settings['WC_MYOB_income_account'];
 		$line_item = array(
 				'Type' => 'Transaction',
-				'Description' => $item_data->get_name(),
+				'Description' => '',
 				'Date' => $localdt . 'T' . $localtm,
 				'UnitOfMeasure' => null,
 				'UnitCount' => $item_data->get_quantity(),
