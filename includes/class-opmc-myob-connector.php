@@ -1190,11 +1190,61 @@ if (!class_exists('Opmc_Myob_Connector')):
 			return '';
 		}
 
+		private function get_test_item_description_candidates($item)
+		{
+			$candidates = array();
+
+			if (!is_object($item)) {
+				return $candidates;
+			}
+
+			if (isset($item->Description)) {
+				$candidates['Description'] = (string) $item->Description;
+			}
+
+			if (isset($item->Name)) {
+				$candidates['Name'] = (string) $item->Name;
+			}
+
+			if (isset($item->SellingDetails) && is_object($item->SellingDetails)) {
+				if (isset($item->SellingDetails->Description)) {
+					$candidates['SellingDetails.Description'] = (string) $item->SellingDetails->Description;
+				}
+
+				if (isset($item->SellingDetails->ItemDescription)) {
+					$candidates['SellingDetails.ItemDescription'] = (string) $item->SellingDetails->ItemDescription;
+				}
+			}
+
+			return $candidates;
+		}
+
+		private function get_preferred_test_item_description($item)
+		{
+			$candidates = $this->get_test_item_description_candidates($item);
+			$priority = array(
+				'Description',
+				'SellingDetails.Description',
+				'SellingDetails.ItemDescription',
+				'Name',
+			);
+
+			foreach ($priority as $key) {
+				if (isset($candidates[$key]) && '' !== trim((string) $candidates[$key])) {
+					return (string) $candidates[$key];
+				}
+			}
+
+			return '';
+		}
+
 		private function apply_test_line_description(array $line, $description_mode, $description_value)
 		{
 			if ('blank' === $description_mode) {
 				$line['Description'] = '';
 			} elseif ('custom' === $description_mode) {
+				$line['Description'] = (string) $description_value;
+			} elseif ('myob_item' === $description_mode) {
 				$line['Description'] = (string) $description_value;
 			}
 
@@ -1249,6 +1299,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 			$journal_memo = trim((string) ($input['journal_memo'] ?? ''));
 			$customer_po_number = trim((string) ($input['customer_po_number'] ?? ''));
 			$dry_run = !empty($input['dry_run']);
+			$debug_notes = array();
 
 			if ($quantity <= 0) {
 				throw new InvalidArgumentException('Quantity must be greater than zero.');
@@ -1282,6 +1333,23 @@ if (!class_exists('Opmc_Myob_Connector')):
 
 			if (!$resolved_item || empty($resolved_item->UID)) {
 				throw new InvalidArgumentException('Could not resolve MYOB item. Provide a valid Item Number or UID.');
+			}
+
+			$item_description_candidates = $this->get_test_item_description_candidates($resolved_item);
+			$preferred_item_description = $this->get_preferred_test_item_description($resolved_item);
+			$debug_notes[] = 'Resolved MYOB item and collected description candidates.';
+
+			if ('myob_item' === $description_mode) {
+				$description_value = $preferred_item_description;
+				$debug_notes[] = '' === $description_value
+					? 'Description mode is myob_item, but no non-empty description candidate was found on the MYOB item.'
+					: 'Description mode is myob_item. Using the preferred MYOB item description candidate.';
+			} elseif ('omit' === $description_mode) {
+				$debug_notes[] = 'Description mode is omit. The outgoing sale line will not contain a Description field.';
+			} elseif ('blank' === $description_mode) {
+				$debug_notes[] = 'Description mode is blank. The outgoing sale line will contain Description as an empty string.';
+			} elseif ('custom' === $description_mode) {
+				$debug_notes[] = 'Description mode is custom. The outgoing sale line will contain the provided Description text.';
 			}
 
 			if ('' === $tax_code_uid) {
@@ -1350,6 +1418,9 @@ if (!class_exists('Opmc_Myob_Connector')):
 			}
 
 			$line = $this->apply_test_line_description($line, $description_mode, $description_value);
+			$debug_notes[] = array_key_exists('Description', $line)
+				? 'Outgoing sale line contains a Description field.'
+				: 'Outgoing sale line does not contain a Description field.';
 
 			$payload = array(
 				'Date' => $local_timestamp,
@@ -1390,11 +1461,14 @@ if (!class_exists('Opmc_Myob_Connector')):
 
 			$endpoint = $this->get_test_sales_endpoint($document_type, $layout_type);
 			$this->create_wc_log('[MYOB Test Sale] [Endpoint] ' . $endpoint);
+			$this->create_wc_log('[MYOB Test Sale] [Description Candidates] ' . print_r($item_description_candidates, true));
+			$this->create_wc_log('[MYOB Test Sale] [Debug Notes] ' . print_r($debug_notes, true));
 			$this->create_wc_log('[MYOB Test Sale] [Payload] ' . print_r($payload, true));
 
 			$result = array(
 				'endpoint' => $endpoint,
 				'payload' => $payload,
+				'debug_notes' => $debug_notes,
 				'resolved_customer' => array(
 					'uid' => (string) $resolved_customer->UID,
 					'display_id' => isset($resolved_customer->DisplayID) ? (string) $resolved_customer->DisplayID : '',
@@ -1404,6 +1478,9 @@ if (!class_exists('Opmc_Myob_Connector')):
 					'uid' => (string) $resolved_item->UID,
 					'number' => isset($resolved_item->Number) ? (string) $resolved_item->Number : $item_number,
 					'name' => isset($resolved_item->Name) ? (string) $resolved_item->Name : '',
+					'description_candidates' => $item_description_candidates,
+					'preferred_description' => $preferred_item_description,
+					'raw' => json_decode(wp_json_encode($resolved_item), true),
 				),
 				'dry_run' => $dry_run,
 			);

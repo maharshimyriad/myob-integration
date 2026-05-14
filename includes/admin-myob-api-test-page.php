@@ -70,6 +70,7 @@ if (!empty($_POST['myob_test_sale']) && check_admin_referer('opmc_myob_test_sale
 	<h1><?php esc_html_e('MYOB API Test', 'wc-myob-integration'); ?></h1>
 	<p><?php esc_html_e('Use this page to resend a controlled MYOB sale payload without creating a new WooCommerce order each time.', 'wc-myob-integration'); ?></p>
 	<p><?php esc_html_e('If you want MYOB to use the item default description, keep Description Mode set to "Omit field".', 'wc-myob-integration'); ?></p>
+	<p><?php esc_html_e('For debugging, compare "Omit field" against "Use MYOB item description". If omit stays blank but explicit MYOB item description works, the API is not auto-filling descriptions.', 'wc-myob-integration'); ?></p>
 
 	<?php if ($error_message) : ?>
 		<div class="notice notice-error"><p><?php echo esc_html($error_message); ?></p></div>
@@ -160,6 +161,7 @@ if (!empty($_POST['myob_test_sale']) && check_admin_referer('opmc_myob_test_sale
 						<select name="description_mode" id="description_mode">
 							<option value="omit" <?php selected($form['description_mode'], 'omit'); ?>>Omit field</option>
 							<option value="blank" <?php selected($form['description_mode'], 'blank'); ?>>Send blank</option>
+							<option value="myob_item" <?php selected($form['description_mode'], 'myob_item'); ?>>Use MYOB item description</option>
 							<option value="custom" <?php selected($form['description_mode'], 'custom'); ?>>Send custom text</option>
 						</select>
 					</td>
@@ -205,8 +207,18 @@ if (!empty($_POST['myob_test_sale']) && check_admin_referer('opmc_myob_test_sale
 				<tr><td><strong>Customer Display ID</strong></td><td><?php echo esc_html($result['resolved_customer']['display_id']); ?></td></tr>
 				<tr><td><strong>Item UID</strong></td><td><?php echo esc_html($result['resolved_item']['uid']); ?></td></tr>
 				<tr><td><strong>Item Number</strong></td><td><?php echo esc_html($result['resolved_item']['number']); ?></td></tr>
+				<tr><td><strong>Preferred MYOB Item Description</strong></td><td><?php echo esc_html($result['resolved_item']['preferred_description']); ?></td></tr>
 			</tbody>
 		</table>
+
+		<h2><?php esc_html_e('Debug Notes', 'wc-myob-integration'); ?></h2>
+		<textarea class="large-text code" rows="8" readonly><?php echo esc_textarea(implode("\n", $result['debug_notes'])); ?></textarea>
+
+		<h2><?php esc_html_e('MYOB Item Description Candidates', 'wc-myob-integration'); ?></h2>
+		<textarea class="large-text code" rows="10" readonly><?php echo esc_textarea(wp_json_encode($result['resolved_item']['description_candidates'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)); ?></textarea>
+
+		<h2><?php esc_html_e('Resolved MYOB Item', 'wc-myob-integration'); ?></h2>
+		<textarea class="large-text code" rows="18" readonly><?php echo esc_textarea(wp_json_encode($result['resolved_item']['raw'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)); ?></textarea>
 
 		<h2><?php esc_html_e('Payload', 'wc-myob-integration'); ?></h2>
 		<textarea class="large-text code" rows="22" readonly><?php echo esc_textarea(wp_json_encode($result['payload'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)); ?></textarea>
