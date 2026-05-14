@@ -174,6 +174,7 @@ if (!class_exists('WC_MYOB_Integration')):
 			add_action('myob_process_product_sync', array($this, 'sync_product_from_myob_to_woo'));
 			add_action('admin_notices', array($this, 'admin_notices'));
 			add_action('admin_menu', array($this, 'register_myob_order_tools_page'));
+			add_action('admin_menu', array($this, 'register_myob_api_test_page'));
 			add_action('admin_menu', array($this, 'register_myob_salespersons_page'));
 
 			// Scripts
@@ -378,6 +379,23 @@ if (!class_exists('WC_MYOB_Integration')):
 		public function render_myob_order_tools_page()
 		{
 			include WC_MYOB_INTEGRATION_PLUGINDIR . 'includes/admin-order-tools-page.php';
+		}
+
+		public function register_myob_api_test_page()
+		{
+			add_submenu_page(
+				'woocommerce',
+				__('MYOB API Test', 'wc-myob-integration'),
+				__('MYOB API Test', 'wc-myob-integration'),
+				'manage_woocommerce',
+				'wc-myob-api-test',
+				array($this, 'render_myob_api_test_page')
+			);
+		}
+
+		public function render_myob_api_test_page()
+		{
+			include WC_MYOB_INTEGRATION_PLUGINDIR . 'includes/admin-myob-api-test-page.php';
 		}
 
 		public function register_myob_salespersons_page()

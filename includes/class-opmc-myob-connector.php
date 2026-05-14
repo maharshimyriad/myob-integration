@@ -1137,6 +1137,288 @@ if (!class_exists('Opmc_Myob_Connector')):
             return $response->Items[0];
         }
 
+		public function get_customer_with_display_id($display_id)
+		{
+			$display_id = trim((string) $display_id);
+			if ('' === $display_id) {
+				return null;
+			}
+
+			$filter = 'DisplayID eq ' . "'" . str_replace("'", "''", $display_id) . "'";
+			$params = array(
+				'$filter' => urlencode($filter),
+				'$top' => 10,
+			);
+
+			$cust = $this->remote_get_json($this->full_endpoint . '/Contact/Customer', $params);
+			if (false !== $cust && null !== $cust && isset($cust->Items) && count($cust->Items) > 0) {
+				return $cust->Items[0];
+			}
+
+			return null;
+		}
+
+		private function get_test_item_base_selling_price($item)
+		{
+			if (is_object($item)) {
+				if (isset($item->SellingDetails) && isset($item->SellingDetails->BaseSellingPrice)) {
+					return (float) $item->SellingDetails->BaseSellingPrice;
+				}
+
+				if (isset($item->BaseSellingPrice)) {
+					return (float) $item->BaseSellingPrice;
+				}
+			}
+
+			return 0.0;
+		}
+
+		private function get_test_line_tax_code_uid($item = null)
+		{
+			if (is_object($item) && isset($item->SellingDetails) && isset($item->SellingDetails->TaxCode) && isset($item->SellingDetails->TaxCode->UID)) {
+				return (string) $item->SellingDetails->TaxCode->UID;
+			}
+
+			if (!empty($this->tax_code_line_item)) {
+				return (string) $this->tax_code_line_item;
+			}
+
+			if (!empty($this->freight_tax_code)) {
+				return (string) $this->freight_tax_code;
+			}
+
+			return '';
+		}
+
+		private function apply_test_line_description(array $line, $description_mode, $description_value)
+		{
+			if ('blank' === $description_mode) {
+				$line['Description'] = '';
+			} elseif ('custom' === $description_mode) {
+				$line['Description'] = (string) $description_value;
+			}
+
+			return $line;
+		}
+
+		private function get_test_sales_endpoint($document_type, $layout_type)
+		{
+			$document_map = array(
+				'quote' => 'Quote',
+				'order' => 'Order',
+				'invoice' => 'Invoice',
+			);
+			$layout_map = array(
+				'item' => 'Item',
+				'service' => 'Service',
+				'professional' => 'Professional',
+			);
+
+			$document_type = strtolower((string) $document_type);
+			$layout_type = strtolower((string) $layout_type);
+
+			if (!isset($document_map[$document_type])) {
+				throw new InvalidArgumentException('Unsupported document type.');
+			}
+
+			if (!isset($layout_map[$layout_type])) {
+				throw new InvalidArgumentException('Unsupported layout type.');
+			}
+
+			return '/Sale/' . $document_map[$document_type] . '/' . $layout_map[$layout_type];
+		}
+
+		public function create_test_sale(array $input)
+		{
+			$document_type = strtolower((string) ($input['document_type'] ?? 'quote'));
+			$layout_type = strtolower((string) ($input['layout_type'] ?? 'item'));
+			$description_mode = strtolower((string) ($input['description_mode'] ?? 'omit'));
+			$description_value = (string) ($input['description_value'] ?? '');
+			$customer_uid = trim((string) ($input['customer_uid'] ?? ''));
+			$customer_display_id = trim((string) ($input['customer_display_id'] ?? ''));
+			$item_uid = trim((string) ($input['item_uid'] ?? ''));
+			$item_number = trim((string) ($input['item_number'] ?? ''));
+			$quantity = (float) ($input['quantity'] ?? 1);
+			$unit_price_input = trim((string) ($input['unit_price'] ?? ''));
+			$freight = (float) ($input['freight'] ?? 0);
+			$total_tax = (float) ($input['total_tax'] ?? 0);
+			$tax_code_uid = trim((string) ($input['tax_code_uid'] ?? ''));
+			$ship_to_address = trim((string) ($input['ship_to_address'] ?? ''));
+			$shipping_method = trim((string) ($input['shipping_method'] ?? ''));
+			$comment = trim((string) ($input['comment'] ?? ''));
+			$journal_memo = trim((string) ($input['journal_memo'] ?? ''));
+			$customer_po_number = trim((string) ($input['customer_po_number'] ?? ''));
+			$dry_run = !empty($input['dry_run']);
+
+			if ($quantity <= 0) {
+				throw new InvalidArgumentException('Quantity must be greater than zero.');
+			}
+
+			$resolved_customer = null;
+			if ('' !== $customer_uid) {
+				$resolved_customer = (object) array(
+					'UID' => $customer_uid,
+					'DisplayID' => $customer_display_id,
+				);
+			} else {
+				$resolved_customer = $this->get_customer_with_display_id($customer_display_id);
+			}
+
+			if (!$resolved_customer || empty($resolved_customer->UID)) {
+				throw new InvalidArgumentException('Could not resolve MYOB customer. Provide a valid Customer Display ID or UID.');
+			}
+
+			$resolved_item = null;
+			if ('' !== $item_number) {
+				$resolved_item = $this->get_single_product_with_sku($item_number);
+			}
+
+			if (!$resolved_item && '' !== $item_uid) {
+				$resolved_item = (object) array(
+					'UID' => $item_uid,
+					'Number' => $item_number,
+				);
+			}
+
+			if (!$resolved_item || empty($resolved_item->UID)) {
+				throw new InvalidArgumentException('Could not resolve MYOB item. Provide a valid Item Number or UID.');
+			}
+
+			if ('' === $tax_code_uid) {
+				$tax_code_uid = $this->get_test_line_tax_code_uid($resolved_item);
+			}
+
+			if ('' === $tax_code_uid) {
+				throw new InvalidArgumentException('No MYOB tax code UID could be resolved for the test sale.');
+			}
+
+			$unit_price = '' !== $unit_price_input ? (float) $unit_price_input : $this->get_test_item_base_selling_price($resolved_item);
+			$subtotal = $quantity * $unit_price;
+			$total_amount = $subtotal + $freight + $total_tax;
+
+			$wp_dt = gmdate('Y-m-d') . 'T' . gmdate('H:i:s');
+			$date_format = 'Y-m-d';
+			$time_format = 'H:i:s';
+			$localdt = get_date_from_gmt($wp_dt, $date_format);
+			$localtm = get_date_from_gmt($wp_dt, $time_format);
+			$local_timestamp = $localdt . 'T' . $localtm;
+
+			if ('' === $customer_po_number) {
+				$customer_po_number = 'WEB-TEST-' . gmdate('Ymd-His');
+			}
+
+			$line = array(
+				'Type' => 'Transaction',
+				'DiscountPercent' => 0,
+				'TaxCode' => array(
+					'UID' => $tax_code_uid,
+				),
+				'Job' => null,
+			);
+
+			if ('item' === $layout_type) {
+				$line['ShipQuantity'] = $quantity;
+				$line['UnitPrice'] = number_format((float) $unit_price, 2, '.', '');
+				$line['Item'] = array(
+					'UID' => $resolved_item->UID,
+				);
+			} elseif ('service' === $layout_type) {
+				if (empty($this->income_account)) {
+					throw new InvalidArgumentException('Income account is not configured for MYOB service test sales.');
+				}
+
+				$line['UnitOfMeasure'] = null;
+				$line['UnitCount'] = $quantity;
+				$line['UnitPrice'] = number_format((float) $unit_price, 2, '.', '');
+				$line['Total'] = number_format((float) $subtotal, 2, '.', '');
+				$line['Account'] = array(
+					'UID' => $this->income_account,
+				);
+			} else {
+				if (empty($this->income_account)) {
+					throw new InvalidArgumentException('Income account is not configured for MYOB professional test sales.');
+				}
+
+				$line['Date'] = $local_timestamp;
+				$line['UnitOfMeasure'] = null;
+				$line['UnitCount'] = $quantity;
+				$line['UnitPrice'] = number_format((float) $unit_price, 2, '.', '');
+				$line['Total'] = number_format((float) $subtotal, 2, '.', '');
+				$line['Account'] = array(
+					'UID' => $this->income_account,
+				);
+			}
+
+			$line = $this->apply_test_line_description($line, $description_mode, $description_value);
+
+			$payload = array(
+				'Date' => $local_timestamp,
+				'ShipToAddress' => $ship_to_address,
+				'CustomerPurchaseOrderNumber' => $customer_po_number,
+				'Customer' => array(
+					'UID' => $resolved_customer->UID,
+				),
+				'Terms' => array(
+					'PaymentIsDue' => 'PrePaid',
+				),
+				'IsTaxInclusive' => true,
+				'Lines' => array($line),
+				'Subtotal' => number_format((float) $subtotal, 2, '.', ''),
+				'Freight' => number_format((float) $freight, 2, '.', ''),
+				'FreightTaxCode' => array(
+					'UID' => $this->freight_tax_code,
+				),
+				'TotalTax' => number_format((float) $total_tax, 2, '.', ''),
+				'TotalAmount' => number_format((float) $total_amount, 2, '.', ''),
+				'Category' => null,
+				'Salesperson' => array(
+					'UID' => '705fc77b-24b5-4b4e-9ddd-00e24f2744bc',
+					'Name' => 'Website Sales',
+					'DisplayID' => '*None',
+				),
+				'Comment' => $comment,
+				'ShippingMethod' => $shipping_method,
+				'JournalMemo' => $journal_memo,
+				'PromisedDate' => null,
+				'DeliveryStatus' => 'Print',
+				'AppliedToDate' => 0,
+				'BalanceDueAmount' => 0,
+				'Status' => 'Open',
+				'LastPaymentDate' => null,
+				'ForeignCurrency' => null,
+			);
+
+			$endpoint = $this->get_test_sales_endpoint($document_type, $layout_type);
+			$this->create_wc_log('[MYOB Test Sale] [Endpoint] ' . $endpoint);
+			$this->create_wc_log('[MYOB Test Sale] [Payload] ' . print_r($payload, true));
+
+			$result = array(
+				'endpoint' => $endpoint,
+				'payload' => $payload,
+				'resolved_customer' => array(
+					'uid' => (string) $resolved_customer->UID,
+					'display_id' => isset($resolved_customer->DisplayID) ? (string) $resolved_customer->DisplayID : '',
+					'name' => isset($resolved_customer->Name) ? (string) $resolved_customer->Name : '',
+				),
+				'resolved_item' => array(
+					'uid' => (string) $resolved_item->UID,
+					'number' => isset($resolved_item->Number) ? (string) $resolved_item->Number : $item_number,
+					'name' => isset($resolved_item->Name) ? (string) $resolved_item->Name : '',
+				),
+				'dry_run' => $dry_run,
+			);
+
+			if ($dry_run) {
+				return $result;
+			}
+
+			$response = $this->remote_post_json($endpoint, $payload);
+			$this->create_wc_log('[MYOB Test Sale] [Response] ' . print_r($response, true));
+			$result['response'] = $response;
+
+			return $result;
+		}
+
 
 
 
