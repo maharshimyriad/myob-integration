@@ -33,6 +33,24 @@ class Opmc_Myob_Item_Invoice {
 		}
 	}
 
+	private function get_myob_description_from_sku( $sku, $fallback = '' ) {
+		foreach ( $this->myob_items as $x ) {
+			if ( $x->Number == $sku ) {
+				if (isset($x->Description) && '' !== trim((string) $x->Description)) {
+					return (string) $x->Description;
+				}
+
+				if (isset($x->Name) && '' !== trim((string) $x->Name)) {
+					return (string) $x->Name;
+				}
+
+				break;
+			}
+		}
+
+		return $fallback;
+	}
+
 	private function get_shipping_method_value() {
 		$fulfilment_method = sanitize_key((string) $this->order->get_meta('_fhs_fulfilment_method'));
 
@@ -81,7 +99,7 @@ class Opmc_Myob_Item_Invoice {
 
 		$line_item = array(
 				'Type' => 'Transaction',
-				'Description' => $item_data->get_name(),
+				'Description' => $this->get_myob_description_from_sku($sku, ''),
 				'ShipQuantity' => $item_data->get_quantity(),
 				'UnitPrice' => number_format((float) $unit_price, 2, '.', ''),
 				'DiscountPercent' => 0,
@@ -175,7 +193,7 @@ class Opmc_Myob_Item_Invoice {
 		$income_account = $wc_settings['WC_MYOB_income_account'];
 		$line_item = array(
 				'Type' => 'Transaction',
-				'Description' => $item_data->get_name(),
+				'Description' => $this->get_myob_description_from_sku($sku, ''),
 				'UnitOfMeasure' => null,
 				'UnitCount' => $item_data->get_quantity(),
 				'UnitPrice' => number_format((float) $unit_price, 2, '.', ''),
@@ -289,7 +307,7 @@ class Opmc_Myob_Item_Invoice {
 		$income_account = $wc_settings['WC_MYOB_income_account'];
 		$line_item = array(
 				'Type' => 'Transaction',
-				'Description' => $item_data->get_name(),
+				'Description' => $this->get_myob_description_from_sku($sku, ''),
 				'Date' => $localdt . 'T' . $localtm,
 				'UnitOfMeasure' => null,
 				'UnitCount' => $item_data->get_quantity(),
