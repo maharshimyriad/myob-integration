@@ -424,7 +424,11 @@ class Opmc_Myob_Item_Invoice {
 		$last_name = 'shipping' === $address_type
 			? trim((string) $this->order->get_shipping_last_name())
 			: trim((string) $this->order->get_billing_last_name());
+		$phone = trim((string) $this->order->get_billing_phone());
 		$person_line = trim($first_name . ' ' . $last_name);
+		if ('' !== $phone) {
+			$person_line = trim($person_line . ' ' . $phone);
+		}
 
 		$street_parts = array_filter(array(
 			trim((string) $address['address_1']),
