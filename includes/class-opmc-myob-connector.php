@@ -3021,7 +3021,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 			}
 			$name = $product->get_name();
 			$sku = $product->get_sku();
-			$price = $product->get_price();
+			$price = $product->get_regular_price(); // Use regular price to avoid overwriting MYOB BaseSellingPrice with a temporary sale price
 			$qty = $product->get_stock_quantity();
 
 			$myob_product = array(
