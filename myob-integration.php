@@ -1343,8 +1343,12 @@ function opmc_update_tier_pricing_from_matrix($product_id, $matrix)
 
     $levels = ['LevelA', 'LevelB', 'LevelC', 'LevelD', 'LevelE', 'LevelF'];
     // Clear any existing sale price and tiered sale rules up front.
-    update_post_meta($product_id, '_sale_price', '');
-    update_post_meta($product_id, '_price', get_post_meta($product_id, '_regular_price', true));
+    // Sale price NOT cleared - preserved from WooCommerce
+    // Only reset active price to regular if no sale price is set
+    $existing_sale_price = get_post_meta( $product_id, '_sale_price', true );
+    if ( empty( $existing_sale_price ) ) {
+        update_post_meta( $product_id, '_price', get_post_meta( $product_id, '_regular_price', true ) );
+    }
 
     $fixed_price_rules = [];
     foreach ($levels as $level) {
@@ -1382,7 +1386,10 @@ function opmc_update_tier_pricing_from_matrix($product_id, $matrix)
                 // Sync Woo base price from LevelA
                 if ($level === 'LevelA') {
                     update_post_meta($product_id, '_regular_price', $price);
-                    update_post_meta($product_id, '_price', $price);
+                // Only update active price from LevelA if no sale price is set
+                if ( empty( get_post_meta( $product_id, '_sale_price', true ) ) ) {
+                    update_post_meta( $product_id, '_price', $price );
+                }
                 }
 
                 continue;
@@ -2053,8 +2060,11 @@ function opmc_sync_single_product_from_myob_by_sku( $product_sku ) {
         if ( (int) $row->QuantityOver === 0 && isset( $row->Levels->LevelA ) ) {
             $price = wc_format_decimal( $row->Levels->LevelA, 2 );
             $product->set_regular_price( $price );
-            $product->set_sale_price( '' );
-            $product->set_price( $price );
+            // Sale price NOT cleared - preserved from WooCommerce
+            // Only update active price if no sale price is set
+            if ( '' === $product->get_sale_price() ) {
+                $product->set_price( $price );
+            }
             $product->save();
             break;
         }

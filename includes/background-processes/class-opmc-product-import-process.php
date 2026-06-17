@@ -133,7 +133,11 @@ class Opmc_Product_Import_Process extends WP_Background_Process
                 update_post_meta($product_id, '_myob_number', $product_data['Number']);
                 update_post_meta($product_id, '_myob_uid', $product_data['UID']);
                 update_post_meta($product_id, '_myob_row_version', $product_data['RowVersion']);
-                update_post_meta($product_id, '_price', $product_data['BaseSellingPrice']);
+                // Only set active price if no sale price is currently set - preserve WooCommerce sale price
+                $existing_sale = get_post_meta($product_id, '_sale_price', true);
+                if ( empty($existing_sale) ) {
+                    update_post_meta($product_id, '_price', $product_data['BaseSellingPrice']);
+                }
                 if (isset($product_data['SellingDetails']['PriceMatrixURI'])) {
                     // Log the start of the process
                     // error_log("Fetching matrix data for product UID: " . $product_data['UID']);

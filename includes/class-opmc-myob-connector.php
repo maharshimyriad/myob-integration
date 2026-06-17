@@ -2838,9 +2838,12 @@ if (!class_exists('Opmc_Myob_Connector')):
 										if (isset($itemss['SellingDetails']['BaseSellingPrice'])) {
 											$base_price = wc_format_decimal($itemss['SellingDetails']['BaseSellingPrice'], 2);
 											$variation->set_regular_price($base_price);
-											$variation->set_price($base_price);
+											// Only update active price if no sale price is set - preserve WooCommerce sale price
+											if ( '' === $variation->get_sale_price() ) {
+												$variation->set_price($base_price);
+											}
 										}
-										$variation->set_sale_price('');
+										// Sale price NOT cleared - preserved from WooCommerce
 
 										$variation->save();
 										update_post_meta($product->get_id(), 'is_synced', 'synced');
@@ -2890,9 +2893,12 @@ if (!class_exists('Opmc_Myob_Connector')):
 							if (isset($item['SellingDetails']['BaseSellingPrice'])) {
 								$base_price = wc_format_decimal($item['SellingDetails']['BaseSellingPrice'], 2);
 								$product->set_regular_price($base_price);
-								$product->set_price($base_price);
+								// Only update active price if no sale price is set - preserve WooCommerce sale price
+								if ( '' === $product->get_sale_price() ) {
+									$product->set_price($base_price);
+								}
 							}
-							$product->set_sale_price('');
+							// Sale price NOT cleared - preserved from WooCommerce
 
 							update_post_meta($product->get_id(), 'is_synced', 'synced');
 							$this->create_wc_log('[Product Sync] [Info] [SKU ' . $sku . ' found in MYOB and sync successfully.]');
