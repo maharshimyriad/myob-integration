@@ -1423,11 +1423,26 @@ function opmc_update_tier_pricing_from_matrix($product_id, $matrix)
         update_post_meta($product_id, '_' . $level . '_tiered_price_sale_rules', []);
         update_post_meta($product_id, '_' . $level . '_tiered_price_sale_rules_type', 'fixed');
         // Clear role-based tiered sale price fields if present.
-        update_post_meta($product_id, '_' . $level . '_tiered_price_sale_price', '');
-        update_post_meta($product_id, '_' . $level . '_tiered_price_sale_discount', '');
-        update_post_meta($product_id, '_' . $level . '_tiered_price_sale_percentage', '');
-        update_post_meta($product_id, '_' . $level . '_tiered_price_sale_from', '');
-        update_post_meta($product_id, '_' . $level . '_tiered_price_sale_to', '');
+        // Only clear _tiered_price_sale_price if not already set - preserve any WooCommerce tiered sale price
+        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_price', true ) ) {
+            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_price', '' );
+        }
+        // Only clear _tiered_price_sale_discount if not already set - preserve any WooCommerce tiered sale price
+        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_discount', true ) ) {
+            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_discount', '' );
+        }
+        // Only clear _tiered_price_sale_percentage if not already set - preserve any WooCommerce tiered sale price
+        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_percentage', true ) ) {
+            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_percentage', '' );
+        }
+        // Only clear _tiered_price_sale_from if not already set - preserve any WooCommerce tiered sale price
+        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_from', true ) ) {
+            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_from', '' );
+        }
+        // Only clear _tiered_price_sale_to if not already set - preserve any WooCommerce tiered sale price
+        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_to', true ) ) {
+            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_to', '' );
+        }
     }
 
     wc_delete_product_transients($product_id);
