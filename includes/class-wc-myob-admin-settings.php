@@ -705,6 +705,15 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'desc_tip' => __('With this setting enabled, integration actions, such as API requests to the MYOB server and responses from the MYOB server, will be recorded in your WordPress wp-debug.log file. Though you must ensure that your site has debug logging enabled, as the plugin can only write to it if you’ve enabled it in your site settings.'),
 					'default' => 'no',
 				),
+
+				'WC_OPMC_tiered_pricing_pro' => array(
+					'title'       => __( 'Tiered Pricing Table Pro (Role-Based)', 'WC-MYOB-setting-tab' ),
+					'type'        => 'checkbox',
+					'description' => __( 'Enable if you have the <strong>Pro version</strong> of the Tiered Pricing Table plugin. When enabled, all six MYOB price levels (LevelA–LevelF) are synced to role-based pricing rules. When disabled, only LevelA quantity breaks are written to the standard <code>_fixed_price_rules</code> meta key used by the free version.', 'WC-MYOB-setting-tab' ),
+					'desc'        => true,
+					'desc_tip'    => __( 'Pro mode writes per-level meta keys (_LevelA_fixed_price_rules, etc.) read by the Pro version of Tiered Pricing Table for role-based pricing. Free mode writes a single _fixed_price_rules key using LevelA prices only, which the free version reads. If unsure, leave this unchecked.', 'WC-MYOB-setting-tab' ),
+					'default'     => 'no',
+				),
 			);
 
 			/**
@@ -760,7 +769,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 			<tr valign="top">
 				<th scope="row" class="titledesc">
 					<label for="<?php echo esc_attr($field); ?>"><?php echo esc_html(wp_kses_post($data['title'])); ?></label>
-					<?php echo esc_html($this->get_tooltip_html($data)); ?>
+					<?php echo wp_kses_post($this->get_tooltip_html($data)); ?>
 				</th>
 				<td class="forminp">
 					<fieldset>
@@ -853,6 +862,34 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 
 
 
+
+		/**
+		 * Override WooCommerce's tooltip with a plain "More info" text button
+		 * that injects a full-width info row below the setting when clicked.
+		 * The tip text is stored in data-tip on the button — no hidden span needed.
+		 *
+		 * @param array $data Field data array.
+		 * @return string HTML for the info button, or empty string if no tip.
+		 */
+		public function get_tooltip_html( $data ) {
+			if ( true === $data['desc_tip'] ) {
+				$tip = $data['description'] ?? '';
+			} elseif ( ! empty( $data['desc_tip'] ) ) {
+				$tip = $data['desc_tip'];
+			} else {
+				return '';
+			}
+
+			if ( empty( $tip ) ) {
+				return '';
+			}
+
+			// Store tip as escaped JSON so it survives any wp_kses pass.
+			return '<button type="button" class="opmc-info-btn" aria-expanded="false" '
+				. 'data-tip="' . esc_attr( $tip ) . '">'
+				. 'More info'
+				. '</button>';
+		}
 
 		/**
 		 * Santize our settings

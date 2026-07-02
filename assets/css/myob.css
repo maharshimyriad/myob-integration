@@ -1,110 +1,268 @@
-.moretext {
-  display: none;
-}
-.moreless-button {
-    color:navy;
-    cursor:pointer;
-}
+/* ============================================================
+   MYOB Integration – Admin UI  (clean top-tab redesign)
+   ============================================================ */
 
-span.valid_access span {
-    margin-left: 8px;
-}
-
-span.valid_access i {
-    font-size: xx-large;
-    /* padding: 0 0 0 4px; */
-}
-span.valid_access {
-    font-size: 20px;
-    background: #90ee9069;
-    color: #006400;
-    padding: 7px;
-    margin-left: 8px;
-}
-
-span.valid_error span {
-    margin-left: 8px;
-}
-
-span.valid_error i {
-    font-size: xx-large;
-    /* padding: 0 0 0 4px; */
-}
-span.valid_error {
-    font-size: 20px;
-    background: #FFCCCB;
-    color: #8B0000;
-    padding: 7px;
-    margin-left: 8px;
-}
-
-span.valid_error a {
-    color: #991620;
-}
-
-#woocommerce_myob_integrations_WC_MYOB_company_file_id option[selected] {
-    background: red;
-}
-
-body {font-family: Arial;}
-
-  /* Style the tab */
-  .tab {
-    overflow: hidden;
-    border: 1px solid #ccc;
-    background-color: #f1f1f1;
-  }
-
-p.status_of_conn {
-    padding: 0% 6%;
-    font-size: medium;
-    color: green;
-}
-.status_of_conn_d {
+/* ── Tab strip ────────────────────────────────────────────── */
+.opmc-tab-nav {
     display: flex;
+    gap: 0;
+    border-bottom: 2px solid #2271b1;
+    margin: 16px 0 0;
+    flex-wrap: wrap;
+}
+
+.opmc-tab-btn {
+    background: #f0f0f1;
+    border: 1px solid #c3c4c7;
+    border-bottom: none;
+    border-radius: 3px 3px 0 0;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #50575e;
+    cursor: pointer;
+    margin-right: 3px;
+    margin-bottom: -2px;
+    transition: background .12s, color .12s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+}
+
+.opmc-tab-btn:hover {
+    background: #fff;
+    color: #2271b1;
+}
+
+.opmc-tab-btn.active {
+    background: #fff;
+    border-color: #2271b1 #2271b1 #fff;
+    color: #2271b1;
+    font-weight: 600;
+    border-bottom: 2px solid #fff;
+}
+
+.opmc-tab-btn .dashicons {
+    font-size: 15px;
+    width: 15px;
+    height: 15px;
+}
+
+/* ── Tab panels ───────────────────────────────────────────── */
+.opmc-panel {
+    display: none;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-top: none;
+}
+
+.opmc-panel.active {
+    display: block;
+}
+
+/* ── Panel header ─────────────────────────────────────────── */
+.opmc-panel-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid #f0f0f1;
+    background: #f6f7f7;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.opmc-panel-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 2px;
+    color: #1d2327;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.opmc-panel-header p {
+    margin: 0;
+    font-size: 12px;
+    color: #646970;
+}
+
+/* ── Connection badge ─────────────────────────────────────── */
+.opmc-conn-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.opmc-conn-badge.connected    { background:#edfaef; color:#1a7d31; border:1px solid #b8e6c0; }
+.opmc-conn-badge.disconnected { background:#fef0f0; color:#c0392b; border:1px solid #f5c6c6; }
+.opmc-conn-badge .dot { width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+/* ── Panel body ───────────────────────────────────────────── */
+.opmc-panel-body {
+    padding: 20px 24px 8px;
+}
+
+/* ── WordPress form-table — restore full label width ─────── */
+.opmc-panel-body .form-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.opmc-panel-body .form-table th {
+    width: 240px;
+    min-width: 200px;
+    padding: 14px 16px 14px 0;
+    vertical-align: top;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1d2327;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+.opmc-panel-body .form-table td {
+    padding: 12px 0;
+    vertical-align: top;
+}
+
+.opmc-panel-body .form-table tr + tr th,
+.opmc-panel-body .form-table tr + tr td {
+    border-top: 1px solid #f0f0f1;
+}
+
+.opmc-panel-body .form-table p.description {
+    font-size: 12px;
+    color: #646970;
+    margin: 4px 0 0;
+    font-style: normal;
+}
+
+/* ── Save bar ─────────────────────────────────────────────── */
+.opmc-save-bar {
+    padding: 14px 24px;
+    border-top: 1px solid #f0f0f1;
+    background: #f6f7f7;
+}
+
+/* ── Log toolbar ──────────────────────────────────────────── */
+.opmc-log-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.opmc-log-meta {
+    font-size: 12px;
+    color: #646970;
+    margin-left: auto;
+}
+
+/* ── Log table ────────────────────────────────────────────── */
+.opmc-log-table-wrap { overflow-x: auto; }
+
+.opmc-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.opmc-log-table th {
+    background: #f6f7f7;
+    border-bottom: 2px solid #dcdcde;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #1d2327;
+    white-space: nowrap;
+}
+
+.opmc-log-table td {
+    padding: 7px 12px;
+    border-bottom: 1px solid #f0f0f1;
+    vertical-align: top;
+    word-break: break-word;
+}
+
+.opmc-log-table tbody tr:hover td { background: #f9f9f9; }
+
+.opmc-log-empty {
+    text-align: center;
+    padding: 28px;
+    color: #646970;
+    font-style: italic;
+}
+
+/* ── Sync log level badges ────────────────────────────────── */
+.opmc-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.opmc-badge-info    { background:#e5f0ff; color:#2271b1; }
+.opmc-badge-success { background:#edfaef; color:#1a7d31; }
+.opmc-badge-warning { background:#fef8e7; color:#9a6700; }
+.opmc-badge-error   { background:#fef0f0; color:#c0392b; }
+
+/* ── Connection status line ───────────────────────────────── */
+p.status_of_conn {
+    font-size: 13px;
+    color: #1a7d31;
+    margin: 6px 0 0;
     padding: 0;
 }
 
-  /* Style the buttons inside the tab */
-  .tab button {
-    background-color: inherit;
-    float: left;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-    font-size: 17px;
-  }
-
-  /* Change background color of buttons on hover */
-  .tab button:hover {
-    background-color: #ddd;
-  }
-
-  /* Create an active/current tablink class */
-  .tab button.active {
-    background-color: #ccc;
-  }
-
-  /* Style the tab content */
-  .tabcontent {
-    display: none;
-    padding: 6px 12px;
-    border: 1px solid #ccc;
-    border-top: none;
-  }
-
-  .header-section {
-    align-items: center;
+.opmc-status-row {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
+/* ── Valid access / error badges (existing JS writes these) ── */
+span.valid_access {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    background: #edfaef;
+    color: #1a7d31;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-left: 8px;
+}
+span.valid_error {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    background: #fef0f0;
+    color: #c0392b;
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-left: 8px;
+}
+span.valid_error a { color: #c0392b; }
+
+/* ── Modal (product / order popup) ───────────────────────── */
 .opmc-myob-product-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0,0,0,.55);
     z-index: 99999;
     display: flex;
     align-items: center;
@@ -117,9 +275,11 @@ p.status_of_conn {
     max-width: 980px;
     max-height: 88vh;
     background: #fff;
-    border-radius: 6px;
+    border-radius: 5px;
     overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 12px 40px rgba(0,0,0,.3);
+    display: flex;
+    flex-direction: column;
 }
 
 .opmc-myob-product-modal-header {
@@ -129,41 +289,24 @@ p.status_of_conn {
     padding: 12px 16px;
     border-bottom: 1px solid #dcdcde;
     background: #f6f7f7;
+    flex-shrink: 0;
 }
 
-.opmc-myob-product-modal-header h3 {
-    margin: 0;
-}
+.opmc-myob-product-modal-header h3 { margin: 0; font-size: 14px; }
 
 .opmc-myob-product-modal-content {
     padding: 16px;
-    max-height: calc(88vh - 58px);
     overflow: auto;
+    flex: 1;
 }
 
-.opmc-myob-pricing-table-wrap {
-    overflow-x: auto;
-}
-
+.opmc-myob-pricing-table-wrap { overflow-x: auto; }
 .opmc-myob-pricing-table th,
-.opmc-myob-pricing-table td {
-    white-space: nowrap;
-}
+.opmc-myob-pricing-table td { white-space: nowrap; }
 
-.opmc-myob-view-toggle {
-    margin-bottom: 14px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.opmc-myob-view-section {
-    display: none;
-}
-
-.opmc-myob-view-section.active {
-    display: block;
-}
+.opmc-myob-view-toggle { margin-bottom: 14px; display: flex; gap: 8px; }
+.opmc-myob-view-section { display: none; }
+.opmc-myob-view-section.active { display: block; }
 
 .opmc-myob-raw-json {
     background: #f6f7f7;
@@ -177,5 +320,95 @@ p.status_of_conn {
     word-break: break-word;
     font-family: Consolas, "Courier New", monospace;
     font-size: 12px;
-    line-height: 1.45;
+    line-height: 1.5;
 }
+
+/* ── Keep old class names alive (JS references them) ─────── */
+.tab { display: none; }
+.tabcontent { display: none; }
+.header-section { display: flex; align-items: center; justify-content: space-between; }
+.moretext { display: none; }
+
+/* tipTip overrides removed — replaced by inline info panel */
+
+/* ============================================================
+   Inline Info Panel  (replaces tooltip)
+   ============================================================ */
+
+/* ── "More info" trigger button ───────────────────────────── */
+.opmc-info-btn {
+    display: inline-block !important;
+    padding: 0 !important;
+    margin-left: 8px !important;
+    background: none !important;
+    border: none !important;
+    border-bottom: 1px dashed #2271b1 !important;
+    border-radius: 0 !important;
+    color: #2271b1 !important;
+    font-size: 11px !important;
+    font-weight: 400 !important;
+    line-height: 1.4 !important;
+    cursor: pointer !important;
+    vertical-align: middle !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    transition: color .12s !important;
+    white-space: nowrap;
+}
+
+.opmc-info-btn:hover,
+.opmc-info-btn:focus {
+    color: #135e96 !important;
+    border-bottom-color: #135e96 !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.opmc-info-btn[aria-expanded="true"] {
+    color: #135e96 !important;
+    border-bottom-style: solid !important;
+}
+
+/* ── Hidden panel anchor (not visible, data stored on btn) ── */
+.opmc-info-panel { display: none !important; }
+
+/* ── Full-width info row injected by JS ───────────────────── */
+.opmc-info-row td {
+    padding: 0 0 8px !important;
+    border-top: none !important;
+    background: transparent !important;
+}
+
+.opmc-info-row-inner {
+    background: #f0f6fc;
+    border-left: 3px solid #2271b1;
+    border-radius: 0 4px 4px 0;
+    padding: 10px 14px;
+    margin: 0;
+    animation: opmc-info-slide-in .15s ease;
+}
+
+@keyframes opmc-info-slide-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.opmc-info-row-text {
+    font-size: 12.5px;
+    color: #2c3338;
+    line-height: 1.6;
+}
+
+.opmc-info-row-text strong { color: #1d2327; }
+.opmc-info-row-text code {
+    background: #e2edf7;
+    color: #135e96;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+/* ── Kill tipTip completely ───────────────────────────────── */
+#tiptip_holder { display: none !important; }
+.woocommerce-help-tip { display: none !important; }

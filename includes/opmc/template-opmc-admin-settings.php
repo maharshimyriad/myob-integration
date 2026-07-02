@@ -1,293 +1,415 @@
-<?php 
+<?php
+/**
+ * MYOB Integration – Admin Settings Template
+ * Top-tab layout, full-width form labels, dual log tabs.
+ */
 
-$enable_config_tab = false;
-$active_tab_id = 'conn_tab_button';
-$woo_settings = get_option('woocommerce_MYOB_integrations_settings');
-$company_file_id = isset($woo_settings['WC_MYOB_company_file_id']) ? $woo_settings['WC_MYOB_company_file_id'] : '';
-$company_file_username = isset($woo_settings['WC_MYOB_company_file_username']) ? $woo_settings['WC_MYOB_company_file_username'] : ''; 
+$woo_settings          = get_option( 'woocommerce_MYOB_integrations_settings', array() );
+$company_file_id       = $woo_settings['WC_MYOB_company_file_id'] ?? '';
+$company_file_username = $woo_settings['WC_MYOB_company_file_username'] ?? '';
+$unauthorized_count    = (int) get_option( 'WC_MYOB_api_unauthorized_count', 0 );
+$refresh_token_failed  = get_option( 'WC_MYOB_refresh_token_failed' );
 
-$unauthorized_count = get_option( 'WC_MYOB_api_unauthorized_count' );
-$refresh_token_failed = get_option( 'WC_MYOB_refresh_token_failed' );
+$is_connected = ! empty( $company_file_username )
+    && ! empty( $company_file_id )
+    && false !== $company_file_id
+    && 'yes' !== $refresh_token_failed
+    && 0 === $unauthorized_count;
 
-if (!empty($company_file_username) && !empty($company_file_id) && false != $company_file_id ) {
-	if ('yes' != $refresh_token_failed && !( $unauthorized_count > 0 )) {
-		$enable_config_tab = true;
-		$active_tab_id = 'conf_tab_button';
-	}
-}
+// Restore last active panel from session (via hidden input written by JS)
+// Default: connection if not connected, config if connected
+$default_panel = $is_connected ? 'panel-config' : 'panel-connection';
 
-$fields = wp_kses_allowed_html( 'post' );
+// wp_kses allowed tags
+$allowed = wp_kses_allowed_html( 'post' );
+$allowed['input']  = array( 'class'=>array(),'id'=>array(),'name'=>array(),'value'=>array(),'type'=>array(),'onclick'=>array(),'style'=>array(),'checked'=>array(),'placeholder'=>array(),'min'=>array(),'max'=>array(),'step'=>array(),'disabled'=>array(),'required'=>array() );
+$allowed['button'] = array( 'class'=>array(),'id'=>array(),'name'=>array(),'value'=>array(),'type'=>array(),'onclick'=>array(),'onfocus'=>array(),'onblur'=>array(),'disabled'=>array(),'style'=>array(),'aria-label'=>array() );
+$allowed['select'] = array( 'class'=>array(),'id'=>array(),'name'=>array(),'style'=>array(),'disabled'=>array() );
+$allowed['option'] = array( 'selected'=>array(),'value'=>array(),'class'=>array(),'disabled'=>array() );
+$allowed['code']   = array();
+$allowed['strong'] = array();
+?>
 
-		$fields['form'] = array(
-'action'    => true,
-					'accept'            => true,
-					'accept-charset' => true,
-					'enctype'        => true,
-					'method'         => true,
-					'name'           => true,
-					'target'         => true,
-);
-		$fields['script'] = array(
-		  'src' => true,
-		  'height' => true,
-		  'width' => true,
-		);
-
-		$fields['input'] = array(
-		'class' => array(),
-		'id'    => array(),
-		'name'  => array(),
-		'value' => array(),
-		'type'  => array(),
-		'onclick' => array(),
-		'style' => array(),
-		'checked' => array(),
-		'script' => array( 'type' => array() ),
-
-		);
-
-		$fields['button'] = array(
-		'class' => array(),
-		'id'    => array(),
-		'name'  => array(),
-		'value' => array(),
-		'type'  => array(),
-		'onclick' => array(),
-		'onfocus' => array(),
-		'onblur' => array(),
-		//'script' => array('type' => array()),
-
-		);
-		$fields['select'] = array(
-		'class'  => array(),
-		'id'     => array(),
-		'name'   => array(),
-		'value'  => array(),
-		'type'   => array(),
-		'style' => array(),
-		'onclick' => array(),
-		'script' => array( 'type' => array() ),
-		);
-		
-		$fields['option'] = array(
-			'selected' => array(),
-			'class'  => array(),
-			'id'     => array(),
-			'name'   => array(),
-			'value'  => array(),
-			'type'   => array(),
-			'style' => array(),
-			'onclick' => array(),
-			'script' => array( 'type' => array() ),
-			
-		);
-		$fields['iframe'] = array(
-			'align'       => true,
-			'frameborder' => true,
-			'height'      => true,
-			'width'       => true,
-			'sandbox'     => true,
-			'seamless'    => true,
-			'scrolling'   => true,
-			'srcdoc'      => true,
-			'src'         => true,
-			'class'       => true,
-			'id'          => true,
-			'style'       => true,
-			'border'      => true,
-);
-
-		?>
-<div class="tab">
-	<button type="button" class="tablinks" onclick="openCity(event, 'myob_connection_settings')" id="conn_tab_button">Connection Settings</button>
-
-	<?php if ($enable_config_tab) : ?>
-
-	<button type="button" class="tablinks" onclick="openCity(event, 'myob_configuration')" id="conf_tab_button">Configuration</button>
-	<button type="button" class="tablinks" onclick="openCity(event, 'myob_logs')" id="log_tab_button">Logs</button>
-
-	<?php endif ?>
-
+<!-- ── Top tab navigation ─────────────────────────────────── -->
+<div class="opmc-tab-nav" role="tablist">
+    <button type="button" class="opmc-tab-btn" id="opmc-tab-connection"
+            data-panel="panel-connection" role="tab" aria-controls="panel-connection">
+        <span class="dashicons dashicons-admin-plugins"></span> Connection
+    </button>
+    <?php if ( $is_connected ) : ?>
+    <button type="button" class="opmc-tab-btn" id="opmc-tab-config"
+            data-panel="panel-config" role="tab" aria-controls="panel-config">
+        <span class="dashicons dashicons-admin-settings"></span> Configuration
+    </button>
+    <button type="button" class="opmc-tab-btn" id="opmc-tab-sync-log"
+            data-panel="panel-sync-log" role="tab" aria-controls="panel-sync-log">
+        <span class="dashicons dashicons-update"></span> Sync Log
+    </button>
+    <button type="button" class="opmc-tab-btn" id="opmc-tab-debug-log"
+            data-panel="panel-debug-log" role="tab" aria-controls="panel-debug-log">
+        <span class="dashicons dashicons-text-page"></span> Debug Log
+    </button>
+    <?php endif; ?>
 </div>
 
-<div id="myob_connection_settings" class="tabcontent">
-	<div class="status_of_conn_d"><h3>Connection Settings</h3><p class="status_of_conn"></p> </div>
-
-	<table class="form-table">
-
-		<?php
-		foreach ( $first_tab_fields as $sk => $sv ) {
-			$input_type = $this->get_field_type( $sv );
-			if ( method_exists( $this, 'generate_' . $input_type . '_html' ) ) {
-				$html = $this->{'generate_' . $input_type . '_html'}( $sk, $sv );
-			} else {
-				$html = $this->generate_text_html( $sk, $sv );
-			}
-			echo wp_kses ($html, $fields);
-		}
-		?>
-	
-	</table>
-</div>
-<?php if ($enable_config_tab) : ?>
-<div id="myob_configuration" class="tabcontent">
-	<h3>Configuration</h3>
-	<table class="form-table">
-		<?php
-
-		foreach ( $second_tab_fields as $sk => $sv ) {
-
-			$config_tab_input_type = $this->get_field_type( $sv );
-
-			if ( method_exists( $this, 'generate_' . $config_tab_input_type . '_html' ) ) {
-				$config_tab_html = $this->{'generate_' . $config_tab_input_type . '_html'}( $sk, $sv );
-			} else {
-				$config_tab_html = $this->generate_text_html( $sk, $sv );
-			}
-			
-			echo wp_kses($config_tab_html, $fields);
-		}
-		?>
-			
-	</table>
+<!-- ══════════════════════════════════════════════════════════
+     PANEL 1 – CONNECTION
+     ══════════════════════════════════════════════════════════ -->
+<div id="panel-connection" class="opmc-panel" role="tabpanel" aria-labelledby="opmc-tab-connection">
+    <div class="opmc-panel-header">
+        <div>
+            <h2><span class="dashicons dashicons-admin-plugins"></span> Connection Settings</h2>
+            <p>Connect this site to your MYOB AccountRight company file.</p>
+        </div>
+        <?php if ( $is_connected ) : ?>
+            <span class="opmc-conn-badge connected"><span class="dot"></span> Connected &mdash; <?php echo esc_html( $company_file_username ); ?></span>
+        <?php else : ?>
+            <span class="opmc-conn-badge disconnected"><span class="dot"></span> Not Connected</span>
+        <?php endif; ?>
+    </div>
+    <div class="opmc-panel-body">
+        <p class="status_of_conn"></p>
+        <table class="form-table">
+            <?php
+            foreach ( $first_tab_fields as $sk => $sv ) {
+                $type = $this->get_field_type( $sv );
+                $html = method_exists( $this, "generate_{$type}_html" )
+                    ? $this->{"generate_{$type}_html"}( $sk, $sv )
+                    : $this->generate_text_html( $sk, $sv );
+                echo wp_kses( $html, $allowed );
+            }
+            ?>
+        </table>
+    </div>
 </div>
 
-<div id="myob_logs" class="tabcontent">
-	<?php
-		$myobs = array();
-		$result = WC_Log_Handler_File::get_log_files();
-	foreach ( $result as $value ) {
-		$val = explode( '-', $value );
-		if ( 'MYOB' == $val[0] || 'myob' == $val[0] ) {
-			$myobs[] = array( $val[2] . '-' . $val[3] . '-' . $val[4], $value );
-		}
-	}
-	if ($myobs) :
-		?>
-	<div class="header-section">
-		<h3 class="header-title">Logs</h3>
-		<div class="log-selection">
-		<?php
-			$selected_log_file_name = get_option( 'selected_opmc_myob_log_view_date', '' );
-			$selected_log_view_text = get_option( 'selected_opmc_myob_log_view_text', gmdate('Y-m-d') );
-		?>
-			<button type="submit" class="button" id="view_log" style="float: right;"> view</button>
-			<select class="select2-selection select2-selection--single" name="logs" id="logs" style="float: right; margin: 0px 4px 0 0;">
-			<?php
-			foreach ( $myobs as $value ) {
-				if ( ! empty( $selected_log_view_text == $value[0] ) ) :
-					$selected_log_file_name = $value[1];
-					?>
-						<option value="<?php echo esc_attr( $selected_log_file_name ); ?>" selected> <?php echo esc_html( $selected_log_view_text ); ?></option>
-					<?php else : ?>
-							<option value="<?php echo esc_attr( $value[1] ); ?>"> <?php echo esc_html( $value[0] ); ?></option>
-					<?php endif; ?>
-				<?php } ?>
-			</select>
-		</div>
-	</div>
-	<div>
-		<?php
-		$logUrl = WC_LOG_DIR . $selected_log_file_name;
+<?php if ( $is_connected ) : ?>
 
-		if (file_exists($logUrl)) :
-			$logs_file = file_get_contents($logUrl);
-				
-			if (false !== $logs_file) {
-				$logs_data = explode(PHP_EOL, $logs_file);
-				$logs_array = array_reverse($logs_data);
-				$log_entries = array_filter($logs_array, function ( $value ) {
-					return !empty(trim($value));
-				});
-				$log_entries = array_values($log_entries);
-			}
-			?>
-				<table class="wp-list-table widefat fixed striped table-view-list">
-					<thead>
-						<tr>
-							<th class="column-date">Date</th>
-							<th class="column-tags">Process</th>
-							<th class="column-tags">Status</th>
-							<th>Message</th>
-						</tr>
-					</thead>
-					<tbody>
-						<?php
-						if (empty($log_entries)) :
-							?>
-							<tr>
-								<td>There are currently no logs to view.</td>
-							</tr>
-							<?php
-						else :
-							foreach ( $log_entries as $log_entry ) :
-								$log_parts = preg_split('/ - | NOTICE /', $log_entry, 2);
-
-								if (strpos($log_parts[0], '+00:00') !== false) {
-									$date = explode( '+00:00', $log_parts[0] );
-									$log_date = isset($log_parts[0]) ? rtrim(str_replace('T', ' at ', $date[0] )) : '';
-								} else {
-									$log_date = isset($log_parts[0]) ? rtrim(str_replace('@', 'at', $log_parts[0]), ' - ') : '';
-								}
-								$log_message_array = isset($log_parts[1]) ? explodeLogMessage($log_parts[1]) : '';
-								
-								if (is_array($log_message_array)) {
-									$log_name = $log_message_array[0];
-									$log_state = $log_message_array[1];
-									$log_message = $log_message_array[2];
-								} else {
-									continue;
-								}
-								?>
-							  <tr>
-								  <td><?php echo esc_html( $log_date ); ?></td>
-								  <td><?php echo esc_html( $log_name ); ?></td>
-								  <td><?php echo esc_html( $log_state ); ?></td>
-								  <td><?php echo esc_html( $log_message ); ?></td>
-							  </tr>
-							<?php
-							endforeach;
-						endif;
-						?>
-					</tbody>
-				</table>
-		<?php
-			endif;
-		?>
-	</div>
-	<?php else : ?>
-		<p>No Logs to preview</p>
-	<?php endif; ?>
+<!-- ══════════════════════════════════════════════════════════
+     PANEL 2 – CONFIGURATION
+     ══════════════════════════════════════════════════════════ -->
+<div id="panel-config" class="opmc-panel" role="tabpanel" aria-labelledby="opmc-tab-config">
+    <div class="opmc-panel-header">
+        <div>
+            <h2><span class="dashicons dashicons-admin-settings"></span> Configuration</h2>
+            <p>Accounts, invoices, products, customers, pricing and sync behaviour.</p>
+        </div>
+    </div>
+    <div class="opmc-panel-body">
+        <table class="form-table">
+            <?php
+            foreach ( $second_tab_fields as $sk => $sv ) {
+                $type = $this->get_field_type( $sv );
+                $html = method_exists( $this, "generate_{$type}_html" )
+                    ? $this->{"generate_{$type}_html"}( $sk, $sv )
+                    : $this->generate_text_html( $sk, $sv );
+                echo wp_kses( $html, $allowed );
+            }
+            ?>
+        </table>
+    </div>
+    <div class="opmc-save-bar">
+        <?php submit_button( __( 'Save Changes' ), 'primary', 'save', false ); ?>
+    </div>
 </div>
 
-<?php endif ?>
+<!-- ══════════════════════════════════════════════════════════
+     PANEL 3 – SYNC LOG
+     ══════════════════════════════════════════════════════════ -->
+<div id="panel-sync-log" class="opmc-panel" role="tabpanel" aria-labelledby="opmc-tab-sync-log">
+    <div class="opmc-panel-header">
+        <div>
+            <h2><span class="dashicons dashicons-update"></span> Sync Log</h2>
+            <p>Product and customer sync events written directly by this plugin.</p>
+        </div>
+        <button type="button" class="button" id="opmc-sync-log-refresh">
+            &#8635; Refresh
+        </button>
+    </div>
+    <div class="opmc-panel-body">
+        <div class="opmc-log-toolbar">
+            <button type="button" class="button button-small" id="opmc-sync-log-clear">Clear Log</button>
+            <span class="opmc-log-meta" id="opmc-sync-log-count"></span>
+        </div>
+        <div class="opmc-log-table-wrap">
+            <table class="opmc-log-table">
+                <thead>
+                    <tr>
+                        <th style="width:170px">Date / Time (UTC)</th>
+                        <th style="width:90px">Level</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody id="opmc-sync-log-body">
+                    <tr><td colspan="3" class="opmc-log-empty">Loading&hellip;</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PANEL 4 – DEBUG LOG
+     ══════════════════════════════════════════════════════════ -->
+<div id="panel-debug-log" class="opmc-panel" role="tabpanel" aria-labelledby="opmc-tab-debug-log">
+    <div class="opmc-panel-header">
+        <div>
+            <h2><span class="dashicons dashicons-text-page"></span> Debug Log</h2>
+            <p>WooCommerce log entries — only written when &ldquo;Enable Debug Logging&rdquo; is on.</p>
+        </div>
+    </div>
+    <div class="opmc-panel-body">
+        <?php
+        $myob_log_files = array();
+        $wc_log_files   = WC_Log_Handler_File::get_log_files();
+        foreach ( $wc_log_files as $lf ) {
+            $parts = explode( '-', $lf );
+            if ( isset( $parts[0] ) && 'myob' === strtolower( $parts[0] ) ) {
+                $date_label = isset( $parts[2], $parts[3], $parts[4] )
+                    ? $parts[2] . '-' . $parts[3] . '-' . rtrim( $parts[4], '.log' )
+                    : $lf;
+                $myob_log_files[] = array( 'label' => $date_label, 'file' => $lf );
+            }
+        }
+
+        if ( ! empty( $myob_log_files ) ) :
+            $selected_file = get_option( 'selected_opmc_myob_log_view_date', '' );
+            $selected_text = get_option( 'selected_opmc_myob_log_view_text', gmdate( 'Y-m-d' ) );
+        ?>
+        <div class="opmc-log-toolbar">
+            <select id="logs" name="logs" style="min-width:180px;">
+                <?php foreach ( $myob_log_files as $lf ) : ?>
+                    <option value="<?php echo esc_attr( $lf['file'] ); ?>"
+                        <?php selected( $lf['label'], $selected_text ); ?>>
+                        <?php echo esc_html( $lf['label'] ); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <button type="button" class="button" id="view_log">View</button>
+        </div>
+        <?php
+            $log_path = WC_LOG_DIR . $selected_file;
+            if ( $selected_file && file_exists( $log_path ) ) :
+                $raw_log   = file_get_contents( $log_path );
+                $log_lines = array_values( array_filter( array_reverse( explode( PHP_EOL, $raw_log ) ), 'strlen' ) );
+        ?>
+        <div class="opmc-log-table-wrap">
+            <table class="opmc-log-table">
+                <thead>
+                    <tr>
+                        <th style="width:190px">Date</th>
+                        <th style="width:130px">Process</th>
+                        <th style="width:90px">Status</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php if ( empty( $log_lines ) ) : ?>
+                    <tr><td colspan="4" class="opmc-log-empty">No log entries found.</td></tr>
+                <?php else : ?>
+                    <?php foreach ( $log_lines as $entry ) :
+                        $parts = preg_split( '/ - | NOTICE /', $entry, 2 );
+                        if ( strpos( $parts[0], '+00:00' ) !== false ) {
+                            $dt       = explode( '+00:00', $parts[0] );
+                            $log_date = rtrim( str_replace( 'T', ' ', $dt[0] ) );
+                        } else {
+                            $log_date = rtrim( str_replace( '@', '', $parts[0] ), ' -' );
+                        }
+                        $msg_arr = isset( $parts[1] ) ? explodeLogMessage( $parts[1] ) : '';
+                        if ( ! is_array( $msg_arr ) ) continue;
+                    ?>
+                    <tr>
+                        <td><?php echo esc_html( $log_date ); ?></td>
+                        <td><?php echo esc_html( $msg_arr[0] ?? '' ); ?></td>
+                        <td><?php echo esc_html( $msg_arr[1] ?? '' ); ?></td>
+                        <td><?php echo esc_html( $msg_arr[2] ?? '' ); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+        <?php else : ?>
+            <p class="opmc-log-empty">No debug log files found. Enable &ldquo;Debug Logging&rdquo; in Configuration and trigger a sync.</p>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php endif; // is_connected ?>
 
 <script>
-	sessionState = sessionStorage.getItem("logviewbtnActive");
-	console.log(sessionState);
-	if( sessionState === "logview" ) {
-		document.getElementById("log_tab_button").click();
-	} else {
-		document.getElementById("<?php echo esc_html($active_tab_id); ?>").click();
-		sessionStorage.removeItem('logviewbtnActive');
-	}
+(function ($) {
+    'use strict';
 
-	jQuery('#conn_tab_button, #conf_tab_button').click(function(){
-		sessionStorage.removeItem('logviewbtnActive');
-	});
+    var DEFAULT_PANEL = '<?php echo esc_js( $default_panel ); ?>';
+    var $saveBtn = jQuery('button.button-primary.woocommerce-save-button');
+    var $submitP = jQuery('p.submit');
 
+    // ── Activate a panel ────────────────────────────────────
+    function activatePanel(id) {
+        jQuery('.opmc-panel').removeClass('active');
+        jQuery('.opmc-tab-btn').removeClass('active').attr('aria-selected', 'false');
 
-	function openCity(evt, cityName) {
-		var i, tabcontent, tablinks;
-		tabcontent = document.getElementsByClassName("tabcontent");
-		for (i = 0; i < tabcontent.length; i++) {
-		  tabcontent[i].style.display = "none";
-		}
-		tablinks = document.getElementsByClassName("tablinks");
-		for (i = 0; i < tablinks.length; i++) {
-		  tablinks[i].className = tablinks[i].className.replace(" active", "");
-		}
-		document.getElementById(cityName).style.display = "block";
-		evt.currentTarget.className += " active";
-	}
+        jQuery('#' + id).addClass('active');
+        jQuery('[data-panel="' + id + '"]').addClass('active').attr('aria-selected', 'true');
+
+        var isConfig = (id === 'panel-config');
+        $saveBtn.css('display', isConfig ? '' : 'none');
+        if (isConfig) {
+            $submitP.css({ border: '1px solid #c3c4c7', 'border-top': 'none', padding: '12px 24px', margin: '0' });
+        } else {
+            $submitP.css({ border: '', 'border-top': '', padding: '', margin: '' });
+        }
+
+        sessionStorage.setItem('opmc_myob_panel', id);
+
+        if (id === 'panel-sync-log') {
+            loadSyncLog();
+        }
+    }
+
+    // ── Info panel toggle (replaces tipTip tooltip) ──────────
+    jQuery(document).on('click', '.opmc-info-btn', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var $btn    = jQuery(this);
+        var tipText = $btn.attr('data-tip') || '';
+        var $row    = $btn.closest('tr');
+        var $next   = $row.next('.opmc-info-row');
+        var isOpen  = $btn.attr('aria-expanded') === 'true';
+
+        // Close all open panels first
+        jQuery('.opmc-info-btn[aria-expanded="true"]').not($btn).each(function () {
+            jQuery(this).attr('aria-expanded', 'false');
+            jQuery(this).closest('tr').next('.opmc-info-row').remove();
+        });
+
+        if (isOpen) {
+            $btn.attr('aria-expanded', 'false');
+            $next.remove();
+        } else {
+            $btn.attr('aria-expanded', 'true');
+            // Escape HTML entities so raw text renders safely
+            var safeText = jQuery('<div>').text(tipText).html();
+            var $infoRow = jQuery(
+                '<tr class="opmc-info-row">' +
+                '<td colspan="2">' +
+                '<div class="opmc-info-row-inner">' +
+                '<div class="opmc-info-row-text">' + safeText + '</div>' +
+                '</div>' +
+                '</td>' +
+                '</tr>'
+            );
+            $row.after($infoRow);
+        }
+    });
+
+    // Close info panel when clicking outside
+    jQuery(document).on('click', function (e) {
+        if (!jQuery(e.target).closest('.opmc-info-btn, .opmc-info-row').length) {
+            jQuery('.opmc-info-btn[aria-expanded="true"]').each(function () {
+                jQuery(this).attr('aria-expanded', 'false');
+                jQuery(this).closest('tr').next('.opmc-info-row').remove();
+            });
+        }
+    });
+
+    // ── Tab click ────────────────────────────────────────────
+    jQuery('.opmc-tab-btn').on('click', function () {
+        activatePanel(jQuery(this).data('panel'));
+    });
+
+    // ── Restore session or use default ───────────────────────
+    var stored = sessionStorage.getItem('opmc_myob_panel');
+    activatePanel((stored && jQuery('#' + stored).length) ? stored : DEFAULT_PANEL);
+
+    // ── Debug log: view button ───────────────────────────────
+    jQuery('#view_log').on('click', function (e) {
+        e.preventDefault();
+        var $sel = jQuery('#logs option:selected');
+        jQuery.ajax({
+            url: OpmcMyobScriptAjax.ajaxurl,
+            type: 'post',
+            dataType: 'json',
+            data: {
+                action:    'opmc_myob_view_debug_logs',
+                selected:  $sel.val(),
+                selected2: $sel.text().trim(),
+                security:  OpmcMyobScriptAjax.ajax_nonce
+            },
+            success: function (data) {
+                if (data && data.result === 'success') {
+                    sessionStorage.setItem('opmc_myob_panel', 'panel-debug-log');
+                    location.reload();
+                }
+            }
+        });
+    });
+
+    // ── Sync log helpers ─────────────────────────────────────
+    function badge(level) {
+        var map = { INFO: 'info', SUCCESS: 'success', WARNING: 'warning', ERROR: 'error' };
+        var c = map[level] || 'info';
+        return '<span class="opmc-badge opmc-badge-' + c + '">' + level + '</span>';
+    }
+
+    function escHtml(s) {
+        return jQuery('<div>').text(s == null ? '' : String(s)).html();
+    }
+
+    function loadSyncLog() {
+        var $body = jQuery('#opmc-sync-log-body');
+        $body.html('<tr><td colspan="3" class="opmc-log-empty">Loading&hellip;</td></tr>');
+        jQuery.ajax({
+            url: OpmcMyobScriptAjax.ajaxurl,
+            type: 'post',
+            dataType: 'json',
+            data: { action: 'opmc_myob_get_sync_log', security: OpmcMyobScriptAjax.ajax_nonce },
+            success: function (resp) {
+                if (!resp.success || !resp.lines || !resp.lines.length) {
+                    $body.html('<tr><td colspan="3" class="opmc-log-empty">No sync events recorded yet.</td></tr>');
+                    jQuery('#opmc-sync-log-count').text('');
+                    return;
+                }
+                var html = '';
+                jQuery.each(resp.lines, function (i, line) {
+                    var m = line.match(/^\[([^\]]+)\]\s*\[([A-Z]+)\]\s*(.*)/);
+                    if (m) {
+                        html += '<tr>'
+                            + '<td style="white-space:nowrap">' + escHtml(m[1]) + '</td>'
+                            + '<td>' + badge(m[2]) + '</td>'
+                            + '<td>' + escHtml(m[3]) + '</td>'
+                            + '</tr>';
+                    } else {
+                        html += '<tr><td colspan="3">' + escHtml(line) + '</td></tr>';
+                    }
+                });
+                $body.html(html);
+                jQuery('#opmc-sync-log-count').text(resp.lines.length + ' entries (newest first)');
+            },
+            error: function () {
+                $body.html('<tr><td colspan="3" class="opmc-log-empty">Could not load sync log.</td></tr>');
+            }
+        });
+    }
+
+    jQuery('#opmc-sync-log-refresh').on('click', loadSyncLog);
+
+    jQuery('#opmc-sync-log-clear').on('click', function () {
+        if (!confirm('Clear all sync log entries? This cannot be undone.')) return;
+        jQuery.ajax({
+            url: OpmcMyobScriptAjax.ajaxurl,
+            type: 'post',
+            dataType: 'json',
+            data: { action: 'opmc_myob_clear_sync_log', security: OpmcMyobScriptAjax.ajax_nonce },
+            success: function () {
+                loadSyncLog();
+                jQuery('#opmc-sync-log-count').text('');
+            }
+        });
+    });
+
+}(jQuery));
 </script>

@@ -156,6 +156,22 @@ if (!class_exists('Opmc_Myob_Connector')):
 		}
 
 		/**
+		 * Write a sync event to the plugin's own sync log file.
+		 * Stored in the plugin directory as opmc-myob-sync.log.
+		 * Shown in the "Sync Log" tab of the plugin settings UI.
+		 *
+		 * @param string $message  Log message.
+		 * @param string $level    One of: INFO, SUCCESS, WARNING, ERROR.
+		 */
+		public function create_sync_log( $message, $level = 'INFO' ) {
+			$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'opmc-myob-sync.log';
+			$level    = strtoupper( $level );
+			$line     = '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] [' . $level . '] ' . ( is_scalar( $message ) ? $message : wp_json_encode( $message ) ) . PHP_EOL;
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			file_put_contents( $log_file, $line, FILE_APPEND | LOCK_EX );
+		}
+
+		/**
 		 * Always writes to WooCommerce logs (WooCommerce > Status > Logs),
 		 * independent from plugin debug toggle.
 		 */

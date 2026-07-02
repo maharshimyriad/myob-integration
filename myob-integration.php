@@ -190,6 +190,8 @@ if (!class_exists('WC_MYOB_Integration')):
 			add_action('wp_ajax_MYOB_import_product_to_myob', 'MYOB_import_product_to_myob');
 			add_action('wp_ajax_MYOB_reload_accounts_list_ajax', 'MYOB_reload_accounts_list_ajax');
 			add_action('wp_ajax_opmc_myob_view_debug_logs', 'opmc_myob_view_debug_logs');
+			add_action('wp_ajax_opmc_myob_clear_sync_log', 'opmc_myob_clear_sync_log');
+			add_action('wp_ajax_opmc_myob_get_sync_log', 'opmc_myob_get_sync_log');
 
 			add_action('woocommerce_order_status_changed', array($this->connector, 'change_order_status'), 10, 4);
 			// add_action( 'save_post', array( $this->connector,'do_insert_product_in_myob' ), 10, 2); PLUGINS-635
@@ -322,7 +324,7 @@ if (!class_exists('WC_MYOB_Integration')):
 		public function load_css_and_script_for_order()
 		{
 			$plugin_url = plugin_dir_url(__FILE__);
-			wp_enqueue_style('style1', $plugin_url . 'assets/css/myob.css', null, '1.2');
+			wp_enqueue_style('style1', $plugin_url . 'assets/css/myob.css', null, '1.4');
 			wp_enqueue_script('script2', $plugin_url . 'assets/js/order_page.js', null, '1.2');
 		}
 
@@ -1012,6 +1014,7 @@ function MYOB_sync_product_by_sku_ajax() {
     try {
 
     opmc_sync_single_product_from_myob_by_sku( $product_sku );
+    $connector->create_sync_log( '[Manual] Product synced | SKU=' . $product_sku, 'SUCCESS' );
 
     wp_send_json([
         'success' => true,
@@ -1023,6 +1026,7 @@ function MYOB_sync_product_by_sku_ajax() {
     $connector->create_wc_log(
         '[Error] MYOB → Woo sync Failed | ' . $e->getMessage()
     );
+    $connector->create_sync_log( '[Manual Error] SKU=' . $product_sku . ' | ' . $e->getMessage(), 'ERROR' );
 
     wp_send_json([
         'success' => false,
@@ -1335,117 +1339,164 @@ function opmc_get_order_by_id_or_number($order_number)
 
 
 
-function opmc_update_tier_pricing_from_matrix($product_id, $matrix)
-{
-    if (empty($matrix->SellingPrices)) {
+/**
+ * Sync MYOB price matrix data to WooCommerce product meta.
+ *
+ * Behaviour depends on the "Tiered Pricing Table Pro" setting:
+ *  - Pro  mode: writes per-role meta keys (_LevelA_fixed_price_rules, etc.)
+ *               recognised by the Pro version of Tiered Pricing Table.
+ *  - Free mode: writes a single _fixed_price_rules key using LevelA prices,
+ *               recognised by the free version of Tiered Pricing Table.
+ *
+ * Edge cases handled:
+ *  - Empty / missing SellingPrices  → returns early, no meta touched.
+ *  - Level price = 0                → treated as "not configured", skipped.
+ *  - Only QuantityOver=0 row        → sets regular prices, no quantity breaks.
+ *  - Some levels populated, others  → handled per-level independently.
+ *
+ * @param int    $product_id WooCommerce product ID.
+ * @param object $matrix     Decoded MYOB ItemPriceMatrix response object.
+ */
+function opmc_update_tier_pricing_from_matrix( $product_id, $matrix ) {
+
+    if ( empty( $matrix->SellingPrices ) ) {
         return;
     }
 
-    $levels = ['LevelA', 'LevelB', 'LevelC', 'LevelD', 'LevelE', 'LevelF'];
-    // Clear any existing sale price and tiered sale rules up front.
-    // Sale price NOT cleared - preserved from WooCommerce
-    // Only reset active price to regular if no sale price is set
-    $existing_sale_price = get_post_meta( $product_id, '_sale_price', true );
-    if ( empty( $existing_sale_price ) ) {
-        update_post_meta( $product_id, '_price', get_post_meta( $product_id, '_regular_price', true ) );
-    }
+    $settings       = get_option( 'woocommerce_MYOB_integrations_settings', array() );
+    $is_pro_mode    = isset( $settings['WC_OPMC_tiered_pricing_pro'] ) && 'yes' === $settings['WC_OPMC_tiered_pricing_pro'];
+    $levels         = array( 'LevelA', 'LevelB', 'LevelC', 'LevelD', 'LevelE', 'LevelF' );
 
-    $fixed_price_rules = [];
-    foreach ($levels as $level) {
-        $fixed_price_rules[$level] = [];
-    }
+    // Preserve any existing WooCommerce sale price.
+    $existing_sale = (string) get_post_meta( $product_id, '_sale_price', true );
 
-    foreach ($matrix->SellingPrices as $row) {
+    // ── Build pricing data from matrix rows ───────────────────────────────
+    $level_base_prices  = array(); // QuantityOver=0 price per level
+    $level_break_prices = array(); // qty-break prices per level  [level][qty] = price
 
-        if (!isset($row->QuantityOver, $row->Levels)) {
+    foreach ( $matrix->SellingPrices as $row ) {
+
+        if ( ! isset( $row->QuantityOver, $row->Levels ) ) {
             continue;
         }
 
-		$qtyOver = (int) $row->QuantityOver;
-		$qty = ($qtyOver > 0) ? ($qtyOver + 1) : 0;
+        $qty_over = (int) $row->QuantityOver;
+        // QuantityOver is the threshold — the rule applies from (qty_over + 1).
+        // Use 0 as the sentinel for the base-price row.
+        $qty_from = ( $qty_over > 0 ) ? ( $qty_over + 1 ) : 0;
 
-        foreach ($levels as $level) {
+        foreach ( $levels as $level ) {
 
-            if (!isset($row->Levels->$level)) {
+            if ( ! isset( $row->Levels->$level ) ) {
                 continue;
             }
 
-            $price = (string) wc_format_decimal($row->Levels->$level, 2);
+            $raw_price = $row->Levels->$level;
 
-            /**
-             * QuantityOver = 0 → LEVEL REGULAR PRICE
-             */
-            if ($qty === 0) {
-
-                update_post_meta(
-                    $product_id,
-                    '_' . $level . '_tiered_price_regular_price',
-                    $price
-                );
-
-                // Sync Woo base price from LevelA
-                if ($level === 'LevelA') {
-                    update_post_meta($product_id, '_regular_price', $price);
-                // Only update active price from LevelA if no sale price is set
-                if ( empty( get_post_meta( $product_id, '_sale_price', true ) ) ) {
-                    update_post_meta( $product_id, '_price', $price );
-                }
-                }
-
+            // Skip levels with no price configured in MYOB (0 means unused).
+            if ( empty( $raw_price ) || (float) $raw_price <= 0 ) {
                 continue;
             }
 
-            /**
-             * QuantityOver > 0 → TIER PRICE
-             */
-            $fixed_price_rules[$level][$qty] = $price;
+            $price = (string) wc_format_decimal( $raw_price, 2 );
+
+            if ( $qty_from === 0 ) {
+                // Base price row (QuantityOver = 0).
+                $level_base_prices[ $level ] = $price;
+            } else {
+                // Quantity-break row.
+                $level_break_prices[ $level ][ $qty_from ] = $price;
+            }
         }
     }
 
-    // Save tier rules + config
-    foreach ($levels as $level) {
-
-        update_post_meta(
-            $product_id,
-            '_' . $level . '_fixed_price_rules',
-            $fixed_price_rules[$level]
-        );
-
-        update_post_meta(
-            $product_id,
-            '_' . $level . '_percentage_price_rules',
-            []
-        );
-
-        update_post_meta($product_id, '_' . $level . '_tiered_price_discount_type', 'regular_price');
-        update_post_meta($product_id, '_' . $level . '_tiered_price_pricing_type', 'flat');
-        update_post_meta($product_id, '_' . $level . '_tiered_price_rules_type', 'fixed');
-        update_post_meta($product_id, '_' . $level . '_tiered_price_sale_rules', []);
-        update_post_meta($product_id, '_' . $level . '_tiered_price_sale_rules_type', 'fixed');
-        // Clear role-based tiered sale price fields if present.
-        // Only clear _tiered_price_sale_price if not already set - preserve any WooCommerce tiered sale price
-        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_price', true ) ) {
-            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_price', '' );
-        }
-        // Only clear _tiered_price_sale_discount if not already set - preserve any WooCommerce tiered sale price
-        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_discount', true ) ) {
-            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_discount', '' );
-        }
-        // Only clear _tiered_price_sale_percentage if not already set - preserve any WooCommerce tiered sale price
-        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_percentage', true ) ) {
-            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_percentage', '' );
-        }
-        // Only clear _tiered_price_sale_from if not already set - preserve any WooCommerce tiered sale price
-        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_from', true ) ) {
-            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_from', '' );
-        }
-        // Only clear _tiered_price_sale_to if not already set - preserve any WooCommerce tiered sale price
-        if ( '' === get_post_meta( $product_id, '_' . $level . '_tiered_price_sale_to', true ) ) {
-            update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_to', '' );
+    // ── Update WooCommerce regular price from LevelA base price ───────────
+    if ( isset( $level_base_prices['LevelA'] ) ) {
+        $level_a_base = $level_base_prices['LevelA'];
+        update_post_meta( $product_id, '_regular_price', $level_a_base );
+        // Only update active price when no sale price is set.
+        if ( '' === $existing_sale ) {
+            update_post_meta( $product_id, '_price', $level_a_base );
         }
     }
 
-    wc_delete_product_transients($product_id);
+    if ( $is_pro_mode ) {
+        // ── PRO MODE: write per-role meta keys ────────────────────────────
+        opmc_write_pro_tier_meta( $product_id, $levels, $level_base_prices, $level_break_prices, $existing_sale );
+    } else {
+        // ── FREE MODE: write single _fixed_price_rules from LevelA ───────
+        opmc_write_free_tier_meta( $product_id, $level_base_prices, $level_break_prices );
+    }
+
+    wc_delete_product_transients( $product_id );
+}
+
+/**
+ * Write Pro-version (role-based) tiered pricing meta for all levels.
+ *
+ * @param int    $product_id
+ * @param array  $levels
+ * @param array  $level_base_prices   Level => base price string.
+ * @param array  $level_break_prices  Level => [ qty => price ] array.
+ * @param string $existing_sale       Current WooCommerce sale price.
+ */
+function opmc_write_pro_tier_meta( $product_id, $levels, $level_base_prices, $level_break_prices, $existing_sale ) {
+
+    foreach ( $levels as $level ) {
+
+        // Base / regular price for this level.
+        if ( isset( $level_base_prices[ $level ] ) ) {
+            update_post_meta( $product_id, '_' . $level . '_tiered_price_regular_price', $level_base_prices[ $level ] );
+        }
+
+        // Quantity-break rules for this level (empty array if no breaks).
+        $breaks = isset( $level_break_prices[ $level ] ) ? $level_break_prices[ $level ] : array();
+
+        update_post_meta( $product_id, '_' . $level . '_fixed_price_rules',      $breaks );
+        update_post_meta( $product_id, '_' . $level . '_percentage_price_rules', array() );
+        update_post_meta( $product_id, '_' . $level . '_tiered_price_discount_type', 'regular_price' );
+        update_post_meta( $product_id, '_' . $level . '_tiered_price_pricing_type',  'flat' );
+        update_post_meta( $product_id, '_' . $level . '_tiered_price_rules_type',    'fixed' );
+        update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_rules',      array() );
+        update_post_meta( $product_id, '_' . $level . '_tiered_price_sale_rules_type', 'fixed' );
+
+        // Preserve any existing tiered sale price fields — only write blank if not set.
+        foreach ( array( 'sale_price', 'sale_discount', 'sale_percentage', 'sale_from', 'sale_to' ) as $field ) {
+            $meta_key = '_' . $level . '_tiered_price_' . $field;
+            if ( '' === (string) get_post_meta( $product_id, $meta_key, true ) ) {
+                update_post_meta( $product_id, $meta_key, '' );
+            }
+        }
+    }
+}
+
+/**
+ * Write free-version tiered pricing meta using LevelA prices only.
+ *
+ * The free "Tiered Pricing Table" plugin reads:
+ *   _fixed_price_rules  => array( min_qty => price, ... )
+ *   _tiered_price_tier_labels => array( 'fixed' => array(), 'percentage' => array() )
+ *
+ * @param int    $product_id
+ * @param array  $level_base_prices
+ * @param array  $level_break_prices
+ */
+function opmc_write_free_tier_meta( $product_id, $level_base_prices, $level_break_prices ) {
+
+    // Only LevelA breaks are used in free mode.
+    $breaks = isset( $level_break_prices['LevelA'] ) ? $level_break_prices['LevelA'] : array();
+
+    update_post_meta( $product_id, '_fixed_price_rules', $breaks );
+
+    // Ensure the tier-labels meta is present (free plugin expects it).
+    $existing_labels = get_post_meta( $product_id, '_tiered_price_tier_labels', true );
+    if ( empty( $existing_labels ) ) {
+        update_post_meta(
+            $product_id,
+            '_tiered_price_tier_labels',
+            array( 'fixed' => array(), 'percentage' => array() )
+        );
+    }
 }
 
 
@@ -1495,6 +1546,36 @@ function opmc_myob_view_debug_logs()
 		)
 	);
 	exit;
+}
+
+/**
+ * AJAX: Return the last N lines of the plugin sync log as JSON.
+ */
+function opmc_myob_get_sync_log() {
+	if ( ! check_ajax_referer( 'opmc_myob_security', 'security', false ) ) {
+		wp_send_json( array( 'success' => false, 'lines' => array() ) );
+	}
+	$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'opmc-myob-sync.log';
+	$lines    = array();
+	if ( file_exists( $log_file ) ) {
+		$raw    = file_get_contents( $log_file );
+		$all    = array_filter( array_reverse( explode( PHP_EOL, $raw ) ), 'strlen' );
+		$lines  = array_values( array_slice( $all, 0, 500 ) );
+	}
+	wp_send_json( array( 'success' => true, 'lines' => $lines ) );
+}
+
+/**
+ * AJAX: Clear the plugin sync log file.
+ */
+function opmc_myob_clear_sync_log() {
+	if ( ! check_ajax_referer( 'opmc_myob_security', 'security', false ) ) {
+		wp_send_json( array( 'success' => false, 'message' => 'Security check failed.' ) );
+	}
+	$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'opmc-myob-sync.log';
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+	file_put_contents( $log_file, '' );
+	wp_send_json( array( 'success' => true, 'message' => 'Sync log cleared.' ) );
 }
 
 /**
@@ -2326,6 +2407,7 @@ function opmc_sync_all_customers_from_myob()
 {
 	$connector = new Opmc_Myob_Connector();
 	$connector->create_wc_log('===== CRON: WC → MYOB CUSTOMER SYNC START =====');
+	$connector->create_sync_log( 'Customer level sync started.', 'INFO' );
 
 	$level_roles = ['LevelA', 'LevelB', 'LevelC', 'LevelD', 'LevelE', 'LevelF'];
 
@@ -2397,15 +2479,18 @@ function opmc_sync_all_customers_from_myob()
 				' | Level=' . $item_price_level .
 				' | Payment=' . $payment_due
 			);
+			$connector->create_sync_log( '[Customer] ' . $user->user_email . ' | Level=' . $item_price_level . ' | Payment=' . $payment_due, 'SUCCESS' );
 
 		} catch (Exception $e) {
 			$connector->create_wc_log(
 				'[CRON ERROR] ' . $user->user_email . ' | ' . $e->getMessage()
 			);
+			$connector->create_sync_log( '[Customer Error] ' . $user->user_email . ' | ' . $e->getMessage(), 'ERROR' );
 		}
 	}
 
 	$connector->create_wc_log('===== CRON: WC → MYOB CUSTOMER SYNC END =====');
+	$connector->create_sync_log( 'Customer level sync completed.', 'INFO' );
 }
 
 function opmc_myob_single_product_sync_cron() {
@@ -2481,12 +2566,14 @@ function opmc_myob_single_product_sync_cron() {
             $connector->create_wc_log(
                 '[Cron Success] Synced SKU=' . $sku
             );
+            $connector->create_sync_log( '[Product] Synced SKU=' . $sku . ' | ID=' . $product_id, 'SUCCESS' );
 
         } catch ( Exception $e ) {
 
             $connector->create_wc_log(
                 '[Cron Failed] SKU=' . $sku . ' | Reason=' . $e->getMessage()
             );
+            $connector->create_sync_log( '[Product Error] SKU=' . $sku . ' | ' . $e->getMessage(), 'ERROR' );
         }
     }
 
