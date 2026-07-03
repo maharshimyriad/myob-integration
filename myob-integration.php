@@ -151,8 +151,11 @@ if (!class_exists('WC_MYOB_Integration')):
 				add_action('WC_MYOB_sync_cron', array($this->connector, 'sync_inventory_data'));
 			}
 
-			// cron to sync matrix pricing
-			add_action('opmc_myob_single_product_sync_cron', 'opmc_myob_single_product_sync_cron');
+			// cron to sync matrix pricing — only register if the setting is enabled
+			$enable_pricing_sync = isset( $config['WC_OPMC_enable_product_pricing_sync'] ) ? $config['WC_OPMC_enable_product_pricing_sync'] : 'yes';
+			if ( 'yes' === $enable_pricing_sync ) {
+				add_action('opmc_myob_single_product_sync_cron', 'opmc_myob_single_product_sync_cron');
+			}
 
 			$config = get_option('woocommerce_MYOB_integrations_settings');
 			$start_sync = isset($config['WC_OPMC_auto_copy_customer_from_myob']) ? $config['WC_OPMC_auto_copy_customer_from_myob'] : '';
@@ -428,10 +431,15 @@ if (!class_exists('WC_MYOB_Integration')):
 					wp_schedule_event(time(), 'WC_MYOB_cron_interval_customer_sync', 'WC_OPMC_auto_copy_customer_from_myob_cron');
 				}
 
-				// Schedule matrix pricing sync daily
-				if (!wp_next_scheduled('opmc_myob_single_product_sync_cron')) {
-					wp_schedule_event(time(), 'WC_MYOB_cron_interval_product_pricing', 'opmc_myob_single_product_sync_cron');
-					$connector->create_wc_log('[MYOB Cron] [Success] [Added cron job for matrix pricing sync]');
+				// Schedule matrix pricing sync — only if enabled in settings
+				$enable_pricing_sync = isset( $config['WC_OPMC_enable_product_pricing_sync'] ) ? $config['WC_OPMC_enable_product_pricing_sync'] : 'yes';
+				if ( 'yes' === $enable_pricing_sync ) {
+					if (!wp_next_scheduled('opmc_myob_single_product_sync_cron')) {
+						wp_schedule_event(time(), 'WC_MYOB_cron_interval_product_pricing', 'opmc_myob_single_product_sync_cron');
+						$connector->create_wc_log('[MYOB Cron] [Success] [Added cron job for matrix pricing sync]');
+					}
+				} else {
+					wp_clear_scheduled_hook('opmc_myob_single_product_sync_cron');
 				}
 			}
 		}
@@ -701,6 +709,20 @@ if (!class_exists('WC_MYOB_Integration')):
 				$connector->create_wc_log('update_myob_cron(): SETTING IS NOT SET, CLEARING myob_process_product_sync HOOK');
 
 				wp_clear_scheduled_hook('myob_process_product_sync');
+			}
+
+			// Handle the single product pricing sync cron toggle
+			$enable_pricing_sync = isset( $new_values['WC_OPMC_enable_product_pricing_sync'] ) ? $new_values['WC_OPMC_enable_product_pricing_sync'] : 'yes';
+			if ( 'yes' === $enable_pricing_sync ) {
+				if ( ! wp_next_scheduled( 'opmc_myob_single_product_sync_cron' ) ) {
+					wp_schedule_event( time(), 'WC_MYOB_cron_interval_product_pricing', 'opmc_myob_single_product_sync_cron' );
+					$connector->create_wc_log( '[MYOB Cron] [Success] [Product pricing sync cron enabled]' );
+					$connector->create_sync_log( 'Product pricing sync cron enabled.', 'INFO' );
+				}
+			} else {
+				wp_clear_scheduled_hook( 'opmc_myob_single_product_sync_cron' );
+				$connector->create_wc_log( '[MYOB Cron] [Info] [Product pricing sync cron disabled]' );
+				$connector->create_sync_log( 'Product pricing sync cron disabled.', 'INFO' );
 			}
 		}
 

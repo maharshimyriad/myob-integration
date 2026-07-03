@@ -525,6 +525,15 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'default' => 'no',
 				),
 
+				'WC_OPMC_enable_product_pricing_sync' => array(
+					'title'       => __( 'Enable Auto Product Pricing Sync', 'WC-MYOB-setting-tab' ),
+					'type'        => 'checkbox',
+					'description' => __( 'Automatically sync product tiered/level pricing from the MYOB price matrix every minute.' ),
+					'desc'        => true,
+					'desc_tip'    => __( 'When enabled, a background cron job runs every minute (in batches of 5 products) to pull the latest price matrix from MYOB AccountRight and update WooCommerce product pricing. Disable this if you want to control pricing syncs manually via the "Sync Product by SKU" tool.' ),
+					'default'     => 'yes',
+				),
+
 				'WC_OPMC_create_product_to_woo_cron' => array(
 					'title' => __('Automatically copy products from MYOB to WooCommerce', 'WC-MYOB-setting-tab'),
 					'type' => 'checkbox',
