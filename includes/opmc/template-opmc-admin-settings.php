@@ -23,7 +23,7 @@ $default_panel = $is_connected ? 'panel-config' : 'panel-connection';
 // wp_kses allowed tags
 $allowed = wp_kses_allowed_html( 'post' );
 $allowed['input']  = array( 'class'=>array(),'id'=>array(),'name'=>array(),'value'=>array(),'type'=>array(),'onclick'=>array(),'style'=>array(),'checked'=>array(),'placeholder'=>array(),'min'=>array(),'max'=>array(),'step'=>array(),'disabled'=>array(),'required'=>array() );
-$allowed['button'] = array( 'class'=>array(),'id'=>array(),'name'=>array(),'value'=>array(),'type'=>array(),'onclick'=>array(),'onfocus'=>array(),'onblur'=>array(),'disabled'=>array(),'style'=>array(),'aria-label'=>array() );
+$allowed['button'] = array( 'class'=>array(),'id'=>array(),'name'=>array(),'value'=>array(),'type'=>array(),'onclick'=>array(),'onfocus'=>array(),'onblur'=>array(),'disabled'=>array(),'style'=>array(),'aria-label'=>array(),'aria-expanded'=>array(),'aria-controls'=>array(),'data-tip'=>array(),'data-panel'=>array(),'data-info-id'=>array(),'role'=>array() );
 $allowed['select'] = array( 'class'=>array(),'id'=>array(),'name'=>array(),'style'=>array(),'disabled'=>array() );
 $allowed['option'] = array( 'selected'=>array(),'value'=>array(),'class'=>array(),'disabled'=>array() );
 $allowed['code']   = array();
@@ -291,17 +291,18 @@ $allowed['strong'] = array();
             $next.remove();
         } else {
             $btn.attr('aria-expanded', 'true');
-            // Escape HTML entities so raw text renders safely
-            var safeText = jQuery('<div>').text(tipText).html();
+            // .attr() already decodes HTML entities from data-tip — use directly
             var $infoRow = jQuery(
                 '<tr class="opmc-info-row">' +
                 '<td colspan="2">' +
                 '<div class="opmc-info-row-inner">' +
-                '<div class="opmc-info-row-text">' + safeText + '</div>' +
+                '<div class="opmc-info-row-text"></div>' +
                 '</div>' +
                 '</td>' +
                 '</tr>'
             );
+            // Set text safely using .text() to avoid XSS
+            $infoRow.find('.opmc-info-row-text').text(tipText);
             $row.after($infoRow);
         }
     });
