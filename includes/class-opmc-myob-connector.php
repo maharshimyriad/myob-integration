@@ -159,6 +159,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 		 * Write a sync event to the plugin's own sync log file.
 		 * Stored in the plugin directory as opmc-myob-sync.log.
 		 * Shown in the "Sync Log" tab of the plugin settings UI.
+		 * Automatically purges entries older than the configured retention period.
 		 *
 		 * @param string $message  Log message.
 		 * @param string $level    One of: INFO, SUCCESS, WARNING, ERROR.
@@ -167,8 +168,40 @@ if (!class_exists('Opmc_Myob_Connector')):
 			$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'opmc-myob-sync.log';
 			$level    = strtoupper( $level );
 			$line     = '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] [' . $level . '] ' . ( is_scalar( $message ) ? $message : wp_json_encode( $message ) ) . PHP_EOL;
+
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 			file_put_contents( $log_file, $line, FILE_APPEND | LOCK_EX );
+
+			// Purge entries older than the configured retention period.
+			$settings      = get_option( 'woocommerce_MYOB_integrations_settings', array() );
+			$retain_days   = isset( $settings['WC_OPMC_sync_log_retention'] ) ? (int) $settings['WC_OPMC_sync_log_retention'] : 7;
+			$cutoff        = gmdate( 'Y-m-d H:i:s', time() - ( $retain_days * DAY_IN_SECONDS ) );
+
+			if ( ! file_exists( $log_file ) ) {
+				return;
+			}
+
+			$raw   = file_get_contents( $log_file ); // phpcs:ignore
+			$lines = explode( PHP_EOL, $raw );
+			$kept  = array();
+
+			foreach ( $lines as $entry ) {
+				if ( empty( trim( $entry ) ) ) {
+					continue;
+				}
+				// Extract timestamp: [2025-01-01 12:00:00 UTC]
+				if ( preg_match( '/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC\]/', $entry, $m ) ) {
+					if ( $m[1] >= $cutoff ) {
+						$kept[] = $entry;
+					}
+					// Lines older than cutoff are dropped (purged).
+				} else {
+					$kept[] = $entry; // Keep lines that don't match the pattern.
+				}
+			}
+
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			file_put_contents( $log_file, implode( PHP_EOL, $kept ) . PHP_EOL, LOCK_EX );
 		}
 
 		/**

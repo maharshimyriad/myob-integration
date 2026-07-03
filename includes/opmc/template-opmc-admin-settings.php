@@ -127,6 +127,12 @@ $allowed['strong'] = array();
         </button>
     </div>
     <div class="opmc-panel-body">
+        <!-- Retention countdown bar -->
+        <div class="opmc-log-retention-bar" id="opmc-retention-bar" style="display:none;">
+            <span class="opmc-retention-icon dashicons dashicons-clock"></span>
+            <span id="opmc-retention-label"></span>
+            <span class="opmc-retention-countdown" id="opmc-retention-countdown"></span>
+        </div>
         <div class="opmc-log-toolbar">
             <button type="button" class="button button-small" id="opmc-sync-log-clear">Clear Log</button>
             <span class="opmc-log-meta" id="opmc-sync-log-count"></span>
@@ -360,6 +366,52 @@ $allowed['strong'] = array();
         return jQuery('<div>').text(s == null ? '' : String(s)).html();
     }
 
+    var countdownTimer = null;
+
+    function startCountdown(nextPurgeUtc, retainDays) {
+        clearInterval(countdownTimer);
+
+        if (!nextPurgeUtc) {
+            jQuery('#opmc-retention-bar').hide();
+            return;
+        }
+
+        var $bar       = jQuery('#opmc-retention-bar');
+        var $label     = jQuery('#opmc-retention-label');
+        var $countdown = jQuery('#opmc-retention-countdown');
+        var purgeMs    = new Date(nextPurgeUtc.replace(' ', 'T') + 'Z').getTime();
+
+        $label.text('Retention: ' + retainDays + ' day' + (retainDays === 1 ? '' : 's') + ' — next purge in');
+        $bar.show();
+
+        function tick() {
+            var nowMs = Date.now();
+            var diff  = Math.max(0, Math.floor((purgeMs - nowMs) / 1000));
+
+            if (diff <= 0) {
+                $countdown.text('Purging soon…');
+                clearInterval(countdownTimer);
+                return;
+            }
+
+            var d = Math.floor(diff / 86400);
+            var h = Math.floor((diff % 86400) / 3600);
+            var m = Math.floor((diff % 3600) / 60);
+            var s = diff % 60;
+
+            var parts = [];
+            if (d > 0) parts.push(d + 'd');
+            if (h > 0) parts.push(h + 'h');
+            if (m > 0) parts.push(m + 'm');
+            parts.push(s + 's');
+
+            $countdown.text(parts.join(' '));
+        }
+
+        tick();
+        countdownTimer = setInterval(tick, 1000);
+    }
+
     function loadSyncLog() {
         var $body = jQuery('#opmc-sync-log-body');
         $body.html('<tr><td colspan="3" class="opmc-log-empty">Loading&hellip;</td></tr>');
@@ -372,8 +424,11 @@ $allowed['strong'] = array();
                 if (!resp.success || !resp.lines || !resp.lines.length) {
                     $body.html('<tr><td colspan="3" class="opmc-log-empty">No sync events recorded yet.</td></tr>');
                     jQuery('#opmc-sync-log-count').text('');
+                    jQuery('#opmc-retention-bar').hide();
+                    clearInterval(countdownTimer);
                     return;
                 }
+
                 var html = '';
                 jQuery.each(resp.lines, function (i, line) {
                     var m = line.match(/^\[([^\]]+)\]\s*\[([A-Z]+)\]\s*(.*)/);
@@ -389,6 +444,9 @@ $allowed['strong'] = array();
                 });
                 $body.html(html);
                 jQuery('#opmc-sync-log-count').text(resp.lines.length + ' entries (newest first)');
+
+                // Start countdown if purge info is available
+                startCountdown(resp.next_purge_utc || null, resp.retain_days || 7);
             },
             error: function () {
                 $body.html('<tr><td colspan="3" class="opmc-log-empty">Could not load sync log.</td></tr>');
@@ -406,6 +464,8 @@ $allowed['strong'] = array();
             dataType: 'json',
             data: { action: 'opmc_myob_clear_sync_log', security: OpmcMyobScriptAjax.ajax_nonce },
             success: function () {
+                clearInterval(countdownTimer);
+                jQuery('#opmc-retention-bar').hide();
                 loadSyncLog();
                 jQuery('#opmc-sync-log-count').text('');
             }

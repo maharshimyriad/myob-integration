@@ -327,7 +327,7 @@ if (!class_exists('WC_MYOB_Integration')):
 		public function load_css_and_script_for_order()
 		{
 			$plugin_url = plugin_dir_url(__FILE__);
-			wp_enqueue_style('style1', $plugin_url . 'assets/css/myob.css', null, '1.4');
+			wp_enqueue_style('style1', $plugin_url . 'assets/css/myob.css', null, '1.5');
 			wp_enqueue_script('script2', $plugin_url . 'assets/js/order_page.js', null, '1.2');
 		}
 
@@ -1572,19 +1572,49 @@ function opmc_myob_view_debug_logs()
 
 /**
  * AJAX: Return the last N lines of the plugin sync log as JSON.
+ * Also returns retention info for the countdown display.
  */
 function opmc_myob_get_sync_log() {
 	if ( ! check_ajax_referer( 'opmc_myob_security', 'security', false ) ) {
 		wp_send_json( array( 'success' => false, 'lines' => array() ) );
 	}
+
 	$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'opmc-myob-sync.log';
 	$lines    = array();
+	$oldest_ts = null;
+
 	if ( file_exists( $log_file ) ) {
-		$raw    = file_get_contents( $log_file );
-		$all    = array_filter( array_reverse( explode( PHP_EOL, $raw ) ), 'strlen' );
-		$lines  = array_values( array_slice( $all, 0, 500 ) );
+		$raw  = file_get_contents( $log_file ); // phpcs:ignore
+		$all  = array_filter( array_reverse( explode( PHP_EOL, $raw ) ), 'strlen' );
+		$lines = array_values( array_slice( $all, 0, 500 ) );
+
+		// Find oldest timestamp for countdown
+		$all_asc = array_filter( explode( PHP_EOL, $raw ), 'strlen' );
+		foreach ( $all_asc as $entry ) {
+			if ( preg_match( '/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) UTC\]/', $entry, $m ) ) {
+				$oldest_ts = $m[1];
+				break;
+			}
+		}
 	}
-	wp_send_json( array( 'success' => true, 'lines' => $lines ) );
+
+	$settings    = get_option( 'woocommerce_MYOB_integrations_settings', array() );
+	$retain_days = isset( $settings['WC_OPMC_sync_log_retention'] ) ? (int) $settings['WC_OPMC_sync_log_retention'] : 7;
+
+	// Next purge = oldest entry timestamp + retention period
+	$next_purge_ts = null;
+	if ( $oldest_ts ) {
+		$next_purge_ts = gmdate( 'Y-m-d H:i:s', strtotime( $oldest_ts . ' UTC' ) + ( $retain_days * DAY_IN_SECONDS ) );
+	}
+
+	wp_send_json( array(
+		'success'       => true,
+		'lines'         => $lines,
+		'retain_days'   => $retain_days,
+		'oldest_entry'  => $oldest_ts,
+		'next_purge_utc' => $next_purge_ts,
+		'server_utc'    => gmdate( 'Y-m-d H:i:s' ),
+	) );
 }
 
 /**

@@ -723,6 +723,24 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'desc_tip'    => __( 'Pro mode writes per-level meta keys (_LevelA_fixed_price_rules, etc.) read by the Pro version of Tiered Pricing Table for role-based pricing. Free mode writes a single _fixed_price_rules key using LevelA prices only, which the free version reads. If unsure, leave this unchecked.', 'WC-MYOB-setting-tab' ),
 					'default'     => 'no',
 				),
+
+				'WC_OPMC_sync_log_retention' => array(
+					'title'       => __( 'Sync Log Retention Period', 'WC-MYOB-setting-tab' ),
+					'type'        => 'select',
+					'description' => __( 'How long to keep entries in the Sync Log before they are automatically removed.' ),
+					'desc'        => true,
+					'desc_tip'    => __( 'The Sync Log is stored as a flat file on your server. Older entries beyond the selected period are purged automatically each time a new sync event is logged, keeping the file size manageable.' ),
+					'default'     => '7',
+					'options'     => array(
+						'1'  => __( '1 Day',    'WC-MYOB-setting-tab' ),
+						'3'  => __( '3 Days',   'WC-MYOB-setting-tab' ),
+						'7'  => __( '7 Days',   'WC-MYOB-setting-tab' ),
+						'14' => __( '14 Days',  'WC-MYOB-setting-tab' ),
+						'21' => __( '21 Days',  'WC-MYOB-setting-tab' ),
+						'30' => __( '1 Month',  'WC-MYOB-setting-tab' ),
+						'90' => __( '3 Months', 'WC-MYOB-setting-tab' ),
+					),
+				),
 			);
 
 			/**
