@@ -108,9 +108,6 @@ $allowed['strong'] = array();
             ?>
         </table>
     </div>
-    <div class="opmc-save-bar">
-        <?php submit_button( __( 'Save Changes' ), 'primary', 'save', false ); ?>
-    </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════
