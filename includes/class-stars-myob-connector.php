@@ -184,6 +184,37 @@ if (!class_exists('Opmc_Myob_Connector')):
 			return $this->remote_get_json( $url, $params );
 		}
 
+		/**
+		 * Make a raw GET request and return [ 'code' => int, 'body' => string ].
+		 * Does NOT throw — always returns the raw HTTP result for diagnostic use.
+		 *
+		 * @param  string $url Full URL including any query string.
+		 * @return array{ code: int, body: string }
+		 */
+		public function public_raw_get( string $url ): array {
+			// Refresh token if stale (same logic as remote_get_json).
+			if ( ( 600 + (int) get_option( 'WC_MYOB_refresh_token_timestamp' ) ) < time() ) {
+				$this->refresh_token();
+			}
+
+			$result = wp_remote_get( $url, [
+				'headers' => $this->create_headers(),
+				'timeout' => $this->http_timeout,
+			] );
+
+			if ( is_wp_error( $result ) ) {
+				return [
+					'code' => 0,
+					'body' => 'WP_Error: ' . $result->get_error_message(),
+				];
+			}
+
+			return [
+				'code' => (int) wp_remote_retrieve_response_code( $result ),
+				'body' => wp_remote_retrieve_body( $result ),
+			];
+		}
+
 		// ─────────────────────────────────────────────────────────────────
 
 		/**

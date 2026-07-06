@@ -3,7 +3,7 @@
  * Stars MYOB – Debug: Fetch All Products from MYOB
  *
  * Fetches every product from the MYOB Inventory/Item endpoint (paginated)
- * and writes the raw JSON to a timestamped log inside the debug/ folder.
+ * and writes the raw JSON to a timestamped log inside the debug/logs/ folder.
  *
  * @package Stars_MYOB_Connector
  */
@@ -23,6 +23,9 @@ class Stars_Debug_Product_Fetch {
 	/** @var Opmc_Myob_Connector */
 	private $connector;
 
+	/** @var string */
+	private $log_file = '';
+
 	public function __construct() {
 		$this->connector = new Opmc_Myob_Connector();
 	}
@@ -36,64 +39,110 @@ class Stars_Debug_Product_Fetch {
 	 */
 	public function run(): array {
 
-		if ( ! $this->connector->has_credentials() ) {
-			return [
-				'success'  => false,
-				'log_file' => '',
-				'total'    => 0,
-				'message'  => 'Not connected to MYOB. Please validate access first.',
-			];
-		}
-
 		$this->ensure_log_dir();
 
-		$timestamp = gmdate( 'Y-m-d_H-i-s' );
-		$log_file  = self::LOG_DIR . 'myob-products-' . $timestamp . '.log';
+		$timestamp      = gmdate( 'Y-m-d_H-i-s' );
+		$this->log_file = self::LOG_DIR . 'myob-products-' . $timestamp . '.log';
+
+		// ── Credential check ─────────────────────────────────────────────
+		if ( ! $this->connector->has_credentials() ) {
+			$this->write_line( '[ERROR] Not connected to MYOB — missing access token, client ID or company file ID.' );
+			$this->write_line( 'access_token    : ' . ( get_option( 'MYOB_access_token' )      ? 'SET'   : 'MISSING' ) );
+			$this->write_line( 'client_id       : ' . ( get_option( 'WC_MYOB_client_id' )       ? 'SET'   : 'MISSING' ) );
+			$this->write_line( 'company_file_id : ' . ( get_option( 'WC_MYOB_company_file_id' ) ? 'SET'   : 'MISSING' ) );
+
+			return $this->result( false, 0, 'Not connected to MYOB. Please validate access first.' );
+		}
+
+		// ── Start ─────────────────────────────────────────────────────────
+		$this->write_line( '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] Starting MYOB product fetch' );
+		$this->write_line( 'Endpoint base   : ' . $this->connector->get_full_endpoint() );
+
+		// Log credential state (values masked, just presence).
+		$config   = get_option( 'woocommerce_MYOB_integrations_settings', [] );
+		$username = isset( $config['WC_MYOB_company_file_username'] ) ? trim( $config['WC_MYOB_company_file_username'] ) : '';
+		$password = isset( $config['WC_MYOB_company_file_password'] ) ? trim( $config['WC_MYOB_company_file_password'] ) : '';
+		$this->write_line( 'access_token    : ' . ( get_option( 'MYOB_access_token' )      ? 'SET (length ' . strlen( get_option( 'MYOB_access_token' ) ) . ')' : 'MISSING' ) );
+		$this->write_line( 'client_id       : ' . ( get_option( 'WC_MYOB_client_id' )       ? 'SET' : 'MISSING' ) );
+		$this->write_line( 'company_file_id : ' . ( get_option( 'WC_MYOB_company_file_id' ) ?: 'MISSING' ) );
+		$this->write_line( 'cf_username     : ' . ( $username ? '"' . $username . '"' : 'EMPTY' ) );
+		$this->write_line( 'cf_password     : ' . ( $password ? 'SET' : 'EMPTY (using blank)' ) );
+		$this->write_line( 'token_timestamp : ' . gmdate( 'Y-m-d H:i:s', (int) get_option( 'WC_MYOB_refresh_token_timestamp' ) ) . ' UTC' );
+		$this->write_line( 'token_age_secs  : ' . ( time() - (int) get_option( 'WC_MYOB_refresh_token_timestamp' ) ) );
 
 		$all_products = [];
 		$page         = 0;
 		$next_url     = null;
 		$errors       = [];
 
-		$this->write_line( $log_file, '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] Starting MYOB product fetch' );
-
 		do {
-			$url = $next_url ?? ( $this->connector->get_full_endpoint() . '/Inventory/Item?$top=' . self::PAGE_SIZE . '&$skip=' . ( $page * self::PAGE_SIZE ) );
+			$skip = $page * self::PAGE_SIZE;
+			$url  = $next_url ?? ( $this->connector->get_full_endpoint() . '/Inventory/Item?$top=' . self::PAGE_SIZE . '&$skip=' . $skip );
 
-			$this->write_line( $log_file, 'Fetching page ' . ( $page + 1 ) . ' → ' . $url );
+			$this->write_line( '' );
+			$this->write_line( 'Fetching page ' . ( $page + 1 ) . ' → ' . $url );
 
-			$response = $this->connector->public_remote_get( $url );
+			// Make the raw HTTP request so we can log the exact response code and body.
+			$raw = $this->connector->public_raw_get( $url );
 
-			if ( is_null( $response ) || ! isset( $response->Items ) ) {
-				$error = 'Page ' . ( $page + 1 ) . ': empty or error response.';
-				$this->write_line( $log_file, '[ERROR] ' . $error );
+			// Log raw HTTP details first — this is the key diagnostic info.
+			$http_code = $raw['code'] ?? 0;
+			$body      = $raw['body'] ?? '';
+
+			$this->write_line( 'HTTP status     : ' . $http_code );
+
+			if ( $http_code !== 200 ) {
+				$error = 'Page ' . ( $page + 1 ) . ': HTTP ' . $http_code . ' — ' . wp_strip_all_tags( $body );
+				$this->write_line( '[ERROR] ' . $error );
+				$this->write_line( 'Raw response body:' );
+				$this->write_line( $body );
+				$errors[] = 'HTTP ' . $http_code;
+				break;
+			}
+
+			if ( empty( $body ) ) {
+				$error = 'Page ' . ( $page + 1 ) . ': empty response body.';
+				$this->write_line( '[ERROR] ' . $error );
 				$errors[] = $error;
 				break;
 			}
 
-			$items = $response->Items;
-			$count = count( $items );
+			$decoded = json_decode( $body );
 
-			$this->write_line( $log_file, 'Page ' . ( $page + 1 ) . ': received ' . $count . ' items.' );
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
+				$error = 'Page ' . ( $page + 1 ) . ': JSON parse error — ' . json_last_error_msg();
+				$this->write_line( '[ERROR] ' . $error );
+				$this->write_line( 'Raw body: ' . substr( $body, 0, 500 ) );
+				$errors[] = $error;
+				break;
+			}
+
+			if ( ! isset( $decoded->Items ) ) {
+				$error = 'Page ' . ( $page + 1 ) . ': response has no Items key.';
+				$this->write_line( '[ERROR] ' . $error );
+				$this->write_line( 'Decoded keys: ' . implode( ', ', array_keys( (array) $decoded ) ) );
+				$errors[] = $error;
+				break;
+			}
+
+			$items = $decoded->Items;
+			$count = count( $items );
+			$this->write_line( 'Items on page   : ' . $count );
 
 			foreach ( $items as $item ) {
 				$all_products[] = $item;
 				$this->write_line(
-					$log_file,
 					sprintf(
-						'  [%s] %s | Price: %s | Active: %s | QtyOnHand: %s',
-						$item->Number       ?? 'N/A',
-						$item->Name         ?? 'N/A',
+						'  [%-30s] %-50s | Price: %-10s | Active: %s',
+						$item->Number           ?? 'N/A',
+						$item->Name             ?? 'N/A',
 						$item->BaseSellingPrice ?? 'N/A',
-						isset( $item->IsActive ) ? ( $item->IsActive ? 'Yes' : 'No' ) : 'N/A',
-						$item->CurrentValue ?? 'N/A'
+						isset( $item->IsActive ) ? ( $item->IsActive ? 'Yes' : 'No' ) : 'N/A'
 					)
 				);
 			}
 
-			$next_url = isset( $response->NextPageLink ) && ! empty( $response->NextPageLink )
-				? $response->NextPageLink
-				: null;
+			$next_url = ! empty( $decoded->NextPageLink ) ? $decoded->NextPageLink : null;
 
 			$page++;
 
@@ -101,29 +150,26 @@ class Stars_Debug_Product_Fetch {
 
 		$total = count( $all_products );
 
-		// Write full JSON dump at the end of the log.
-		$this->write_line( $log_file, '' );
-		$this->write_line( $log_file, '=== RAW JSON DUMP (' . $total . ' products) ===' );
-		file_put_contents( $log_file, json_encode( $all_products, JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
+		// ── Write full JSON dump ──────────────────────────────────────────
+		$this->write_line( '' );
+		$this->write_line( '=== RAW JSON DUMP (' . $total . ' products) ===' );
+		file_put_contents( $this->log_file, json_encode( $all_products, JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
 
-		$this->write_line( $log_file, '' );
-		$this->write_line( $log_file, '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] Fetch complete. Total products: ' . $total );
+		$this->write_line( '' );
+		$this->write_line( '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] Fetch complete. Total products: ' . $total );
 
 		if ( ! empty( $errors ) ) {
-			$this->write_line( $log_file, '[ERRORS] ' . implode( ' | ', $errors ) );
+			$this->write_line( '[ERRORS] ' . implode( ' | ', $errors ) );
 		}
 
-		return [
-			'success'  => empty( $errors ),
-			'log_file' => basename( $log_file ),
-			'total'    => $total,
-			'message'  => empty( $errors )
+		return $this->result( empty( $errors ), $total,
+			empty( $errors )
 				? 'Fetched ' . $total . ' products successfully.'
-				: 'Completed with errors: ' . implode( ', ', $errors ),
-		];
+				: 'Completed with errors: ' . implode( ', ', $errors )
+		);
 	}
 
-	// ── Helpers ───────────────────────────────────────────────────────────
+	// ── Static helpers ────────────────────────────────────────────────────
 
 	/**
 	 * Return a list of existing debug log files (newest first).
@@ -141,7 +187,6 @@ class Stars_Debug_Product_Fetch {
 				'name'     => basename( $file ),
 				'size'     => size_format( filesize( $file ) ),
 				'modified' => gmdate( 'Y-m-d H:i:s', filemtime( $file ) ) . ' UTC',
-				'path'     => $file,
 			];
 		}
 
@@ -151,31 +196,37 @@ class Stars_Debug_Product_Fetch {
 	}
 
 	/**
-	 * Delete a specific log file by name.
+	 * Delete a specific log file by name (validates filename format first).
 	 */
 	public static function delete_log( string $name ): bool {
-		// Only allow our own log files.
 		if ( ! preg_match( '/^myob-products-[\d_-]+\.log$/', $name ) ) {
 			return false;
 		}
 		$path = self::LOG_DIR . $name;
-		if ( file_exists( $path ) ) {
-			return unlink( $path );
-		}
-		return false;
+		return file_exists( $path ) && unlink( $path );
 	}
+
+	// ── Private helpers ───────────────────────────────────────────────────
 
 	private function ensure_log_dir(): void {
 		$dir = self::LOG_DIR;
 		if ( ! is_dir( $dir ) ) {
 			wp_mkdir_p( $dir );
-			// Prevent direct browser access.
 			file_put_contents( $dir . '.htaccess', "Deny from all\n" );
 			file_put_contents( $dir . 'index.php', "<?php // Silence is golden.\n" );
 		}
 	}
 
-	private function write_line( string $file, string $line ): void {
-		file_put_contents( $file, $line . PHP_EOL, FILE_APPEND );
+	private function write_line( string $line ): void {
+		file_put_contents( $this->log_file, $line . PHP_EOL, FILE_APPEND );
+	}
+
+	private function result( bool $success, int $total, string $message ): array {
+		return [
+			'success'  => $success,
+			'log_file' => basename( $this->log_file ),
+			'total'    => $total,
+			'message'  => $message,
+		];
 	}
 }
