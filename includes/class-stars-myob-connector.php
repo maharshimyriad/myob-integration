@@ -155,6 +155,37 @@ if (!class_exists('Opmc_Myob_Connector')):
 			}
 		}
 
+		// ── Debug helpers (used by Stars_Debug_Product_Fetch) ─────────────
+
+		/**
+		 * Returns true when the minimum credentials needed for API calls are set.
+		 */
+		public function has_credentials(): bool {
+			return ! empty( $this->company_file_id )
+				&& ! empty( $this->access_token )
+				&& ! empty( $this->client_id );
+		}
+
+		/**
+		 * Returns the fully-qualified MYOB API base URL including company file ID.
+		 */
+		public function get_full_endpoint(): string {
+			return $this->full_endpoint;
+		}
+
+		/**
+		 * Public wrapper around the private remote_get_json for debug use.
+		 *
+		 * @param  string     $url    Full URL to request.
+		 * @param  array|null $params Optional OData query parameters.
+		 * @return object|null
+		 */
+		public function public_remote_get( string $url, ?array $params = null ) {
+			return $this->remote_get_json( $url, $params );
+		}
+
+		// ─────────────────────────────────────────────────────────────────
+
 		/**
 		 * Write a sync event to the plugin's own sync log file.
 		 * Stored in the plugin directory as stars-myob-sync.log.

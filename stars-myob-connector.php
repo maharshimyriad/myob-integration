@@ -123,6 +123,15 @@ function opmc_myob_woocommerce_is_active()
 	return class_exists('WooCommerce');
 }
 
+// Load debug tools (admin only).
+if ( is_admin() ) {
+	add_action( 'plugins_loaded', function () {
+		if ( class_exists( 'WooCommerce' ) && defined( 'WC_MYOB_INTEGRATION_PLUGINDIR' ) ) {
+			require_once WC_MYOB_INTEGRATION_PLUGINDIR . 'debug/stars-debug-ajax.php';
+		}
+	}, 5 );
+}
+
 
 /**
  *  Main integration class — only instantiated when WooCommerce is active.

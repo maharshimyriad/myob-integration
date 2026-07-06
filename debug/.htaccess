@@ -1,0 +1,6 @@
+# Deny direct access to all files in this folder.
+# Log files are served only via authenticated AJAX.
+<FilesMatch "\.(php|log|json)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
