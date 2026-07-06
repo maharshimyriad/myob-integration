@@ -62,11 +62,25 @@ $allowed['strong'] = array();
             <p>Connect this site to your MYOB AccountRight company file.</p>
         </div>
         <?php if ( $is_connected ) : ?>
-            <span class="opmc-conn-badge connected"><span class="dot"></span> Connected &mdash; <?php echo esc_html( $company_file_username ); ?></span>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span class="opmc-conn-badge connected"><span class="dot"></span> Connected &mdash; <?php echo esc_html( $company_file_username ); ?></span>
+                <button type="button" id="stars-myob-disconnect" class="button"
+                    style="color:#c0392b;border-color:#c0392b;"
+                    title="Clear all stored tokens and disconnect from MYOB">
+                    <span class="dashicons dashicons-no" style="vertical-align:middle;margin-top:-2px;font-size:14px;"></span>
+                    Disconnect
+                </button>
+            </div>
         <?php else : ?>
             <span class="opmc-conn-badge disconnected"><span class="dot"></span> Not Connected</span>
         <?php endif; ?>
     </div>
+    <?php if ( $is_connected ) : ?>
+    <div style="background:#edfaef;border-left:4px solid #1a7d31;padding:10px 20px;font-size:13px;color:#1a7d31;">
+        <strong>&#10003; MYOB is connected.</strong>
+        Your access token is active. If you need to re-authorise, click <strong>Validate Access</strong> below or use <strong>Disconnect</strong> to fully clear the connection first.
+    </div>
+    <?php endif; ?>
     <div class="opmc-panel-body">
         <p class="status_of_conn"></p>
         <table class="form-table">
@@ -323,6 +337,37 @@ $allowed['strong'] = array();
     // ── Tab click ────────────────────────────────────────────
     jQuery('.opmc-tab-btn').on('click', function () {
         activatePanel(jQuery(this).data('panel'));
+    });
+
+    // ── Disconnect button ────────────────────────────────────
+    jQuery('#stars-myob-disconnect').on('click', function () {
+        if ( ! confirm('This will clear all stored MYOB tokens and disconnect this site from MYOB AccountRight.\n\nYou will need to click "Validate Access" and go through the MYOB login again to reconnect.\n\nContinue?') ) {
+            return;
+        }
+        var $btn = jQuery(this);
+        $btn.prop('disabled', true).text('Disconnecting…');
+
+        jQuery.ajax({
+            url:      OpmcMyobScriptAjax.ajaxurl,
+            type:     'post',
+            dataType: 'json',
+            data: {
+                action:   'stars_myob_disconnect',
+                security: OpmcMyobScriptAjax.ajax_nonce
+            },
+            success: function (resp) {
+                if ( resp && resp.success ) {
+                    location.reload();
+                } else {
+                    alert('Disconnect failed. Please try again.');
+                    $btn.prop('disabled', false).text('Disconnect');
+                }
+            },
+            error: function () {
+                alert('Request failed. Please try again.');
+                $btn.prop('disabled', false).text('Disconnect');
+            }
+        });
     });
 
     // ── Restore session or use default ───────────────────────

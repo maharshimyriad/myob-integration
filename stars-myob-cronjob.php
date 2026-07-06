@@ -127,21 +127,18 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 			// update token related data in option table
 			update_option( 'MYOB_access_token', $tokenData->access_token );
 			update_option( 'MYOB_access_refresh_token', $tokenData->refresh_token );
-			$conn->create_wc_log('REFRESH TOKEN IS');
-			$conn->create_wc_log(print_r($tokenData->refresh_token, 1));
-			$tok = get_option( 'MYOB_access_refresh_token' );
-			$conn->create_wc_log(print_r($tok, 1));
-
-
 			update_option( 'MYOB_access_token_type', $tokenData->token_type );
 			update_option( 'MYOB_access_token_scope', $tokenData->scope );
-				
-			// TODO use the library
+			update_option( 'WC_MYOB_refresh_token_failed', 'no' );
+			update_option( 'WC_MYOB_api_unauthorized_count', 0 );
+
+			$conn->create_wc_log('REFRESH TOKEN IS: ' . print_r($tokenData->refresh_token, 1));
+
 			$res = get_company_file( $tokenData->access_token, $api_client_id );
 
 			$current_options = get_option( 'woocommerce_MYOB_integrations_settings', array() ); 
 
-			if ( '' != $res ) {
+			if ( ! empty( $res ) ) {
 
 				update_option( 'WC_MYOB_company_file_id', $res );
 
@@ -149,16 +146,31 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 				$merged_options = array_merge( $current_options, $desired_options );
 			
 				update_option( 'woocommerce_MYOB_integrations_settings', $merged_options );
-
 				update_option( 'WC_MYOB_company_file_list', $conn->get_company_file() );
-				update_option( 'WC_MYOB_refresh_token_timestamp', time());
-				
-			} 
-			?>
-			<div class="alert alert-success text-center" style="margin-top:30px">
-				<div class="d-inline-block"><strong>Success!</strong> Authentication successful.</div>
-			</div>
-			<?php
+				update_option( 'WC_MYOB_refresh_token_timestamp', time() );
+
+				$conn->create_wc_log('[Auth] Company file ID saved: ' . $res);
+				?>
+				<div class="alert alert-success text-center" style="margin-top:30px">
+					<div class="d-inline-block">
+						<strong>&#10003; Authentication successful!</strong><br>
+						Your access token has been saved. Return to the plugin settings to enter your Company File Username and click <strong>Connect to Company File</strong>.
+					</div>
+				</div>
+				<?php
+			} else {
+				// Token saved but company file lookup failed — still usable, user just needs to reload accounts.
+				update_option( 'WC_MYOB_refresh_token_timestamp', time() );
+				$conn->create_wc_log('[Auth] Token saved but company file lookup returned empty. User will need to reload accounts manually.');
+				?>
+				<div class="alert alert-warning text-center" style="margin-top:30px">
+					<div class="d-inline-block">
+						<strong>&#10003; Access token saved.</strong><br>
+						Return to the plugin settings, enter your <strong>Company File Username</strong>, and click <strong>Connect to Company File</strong> to complete the connection.
+					</div>
+				</div>
+				<?php
+			}
 		} else {
 			?>
 				<div class="alert alert-danger text-center" style="margin-top:30px">
@@ -179,30 +191,45 @@ function get_company_file( $access_token, $api_client_id ) {
 	$conn = new Opmc_Myob_Connector();
 	$conn->create_wc_log('Getting company file');
 
+	// Use the saved company file username if available, fall back to Administrator.
+	$settings = get_option( 'woocommerce_MYOB_integrations_settings', array() );
+	$cf_username = isset( $settings['WC_MYOB_company_file_username'] ) ? trim( $settings['WC_MYOB_company_file_username'] ) : 'Administrator';
+	$cf_password = isset( $settings['WC_MYOB_company_file_password'] ) ? trim( $settings['WC_MYOB_company_file_password'] ) : '';
+
 	$headers = array(
 			'Authorization'           => 'bearer ' . $access_token,
-			'x-myobapi-key'           => $api_client_id,   
+			'x-myobapi-key'           => $api_client_id,
 			'Accept-Encoding'         => 'gzip,deflate',
 			'x-myobapi-version'       => 'v2',
 			'scope'                   => 'CompanyFile',
-			'x-myobapi-cftoken'       => base64_encode('Administrator:'),
+			'x-myobapi-cftoken'       => base64_encode( $cf_username . ':' . $cf_password ),
 		);
-		
+
 	$conn->create_wc_log(print_r($headers, 1));
 	$res = wp_remote_get( 'https://ar1.api.myob.com/accountright/' , array(
-		'headers' =>  $headers,        
-	)); 
+		'headers' =>  $headers,
+	));
 	$res_body =  json_decode($res['body']);
 	$conn->create_wc_log('==== Company File results ====');
 	$conn->create_wc_log(print_r($res_body, 1));
-		$fileNames = array();
-		$fileUriID = array();
+
+	if ( empty( $res_body ) || ! is_array( $res_body ) ) {
+		$conn->create_wc_log('[get_company_file] No company files returned. Check access token and cftoken.');
+		return '';
+	}
+
+	$fileUriID = array();
 	foreach ($res_body as $filesId) {
 		if (property_exists($filesId, 'Name') && property_exists($filesId, 'Id')) {
-				$fileNames[] = $filesId->Name; 
-				$fileUriID[] = $filesId->Id;
+			$fileUriID[] = $filesId->Id;
 		}
 	}
+
+	if ( empty( $fileUriID ) ) {
+		$conn->create_wc_log('[get_company_file] Response had items but none with Name+Id properties.');
+		return '';
+	}
+
 	return $fileUriID[0];
 }
 ?>

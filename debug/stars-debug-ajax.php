@@ -48,13 +48,14 @@ function stars_myob_debug_page(): void {
 
 		<?php if ( ! empty( $log_files ) ) : ?>
 		<hr>
-		<h2><?php esc_html_e( 'Existing Product Debug Logs', 'stars-myob-connector' ); ?></h2>
-		<table class="widefat striped" style="max-width:800px;">
+		<h2><?php esc_html_e( 'Product Debug Logs', 'stars-myob-connector' ); ?></h2>
+		<table class="widefat striped" style="max-width:900px;">
 			<thead>
 				<tr>
 					<th><?php esc_html_e( 'File', 'stars-myob-connector' ); ?></th>
-					<th><?php esc_html_e( 'Size', 'stars-myob-connector' ); ?></th>
-					<th><?php esc_html_e( 'Created (UTC)', 'stars-myob-connector' ); ?></th>
+					<th style="width:80px"><?php esc_html_e( 'Products', 'stars-myob-connector' ); ?></th>
+					<th style="width:70px"><?php esc_html_e( 'Size', 'stars-myob-connector' ); ?></th>
+					<th style="width:180px"><?php esc_html_e( 'Created (UTC)', 'stars-myob-connector' ); ?></th>
 					<th><?php esc_html_e( 'Actions', 'stars-myob-connector' ); ?></th>
 				</tr>
 			</thead>
@@ -62,14 +63,28 @@ function stars_myob_debug_page(): void {
 			<?php foreach ( $log_files as $lf ) : ?>
 				<tr>
 					<td><code><?php echo esc_html( $lf['name'] ); ?></code></td>
+					<td><?php echo esc_html( $lf['total'] ); ?></td>
 					<td><?php echo esc_html( $lf['size'] ); ?></td>
 					<td><?php echo esc_html( $lf['modified'] ); ?></td>
-					<td>
+					<td style="white-space:nowrap;">
 						<button type="button"
 							class="button button-small stars-debug-view-log"
-							data-file="<?php echo esc_attr( $lf['name'] ); ?>">
-							<?php esc_html_e( 'View', 'stars-myob-connector' ); ?>
+							data-file="<?php echo esc_attr( $lf['name'] ); ?>"
+							data-mode="summary">
+							<?php esc_html_e( 'Summary', 'stars-myob-connector' ); ?>
 						</button>
+						<button type="button"
+							class="button button-small stars-debug-view-log"
+							data-file="<?php echo esc_attr( $lf['name'] ); ?>"
+							data-mode="full">
+							<?php esc_html_e( 'Full Log', 'stars-myob-connector' ); ?>
+						</button>
+						<a href="<?php echo esc_url( wp_nonce_url(
+							admin_url( 'admin-ajax.php?action=stars_myob_debug_download_log&file=' . rawurlencode( $lf['name'] ) ),
+							'stars_myob_debug'
+						) ); ?>" class="button button-small">
+							<?php esc_html_e( 'Download', 'stars-myob-connector' ); ?>
+						</a>
 						<button type="button"
 							class="button button-small stars-debug-delete-log"
 							data-file="<?php echo esc_attr( $lf['name'] ); ?>"
@@ -84,9 +99,12 @@ function stars_myob_debug_page(): void {
 		<?php endif; ?>
 
 		<div id="stars-debug-log-content" style="margin-top:20px;display:none;">
-			<h3 id="stars-debug-log-title"></h3>
+			<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+				<h3 id="stars-debug-log-title" style="margin:0;"></h3>
+				<button type="button" id="stars-debug-log-close" class="button button-small">✕ Close</button>
+			</div>
 			<pre id="stars-debug-log-pre"
-				style="background:#f6f7f7;border:1px solid #dcdcde;padding:14px;max-height:500px;overflow:auto;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-all;">
+				style="background:#1e1e1e;color:#d4d4d4;border:1px solid #dcdcde;padding:16px;max-height:600px;overflow:auto;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;border-radius:4px;">
 			</pre>
 		</div>
 	</div>
@@ -114,9 +132,8 @@ function stars_myob_debug_page(): void {
 						$result.html(
 							'<div class="notice notice-success inline" style="margin:0"><p>' +
 							'<strong>Done.</strong> ' + $('<div/>').text(resp.data.message).html() +
-							' Log file: <code>' + $('<div/>').text(resp.data.log_file).html() + '</code></p></div>'
+							' &nbsp; Log: <code>' + $('<div/>').text(resp.data.log_file).html() + '</code></p></div>'
 						).show();
-						// Reload after short delay so log list updates.
 						setTimeout(function(){ location.reload(); }, 2000);
 					} else {
 						var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown error.';
@@ -135,22 +152,23 @@ function stars_myob_debug_page(): void {
 			});
 		});
 
-		// ── View log ──────────────────────────────────────────────────────
+		// ── View log (summary or full) ─────────────────────────────────────
 		$(document).on('click', '.stars-debug-view-log', function(){
 			var file    = $(this).data('file');
+			var mode    = $(this).data('mode') || 'full';
 			var $wrap   = $('#stars-debug-log-content');
 			var $pre    = $('#stars-debug-log-pre');
 			var $title  = $('#stars-debug-log-title');
 
 			$pre.text('Loading…');
-			$title.text(file);
-			$wrap.show();
+			$title.text(file + (mode === 'summary' ? '  [summary]' : '  [full log]'));
+			$wrap.show()[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
 
 			$.ajax({
 				url:      ajaxurl,
 				type:     'post',
 				dataType: 'json',
-				data:     { action: 'stars_myob_debug_view_log', security: nonce, file: file },
+				data:     { action: 'stars_myob_debug_view_log', security: nonce, file: file, mode: mode },
 				success: function(resp){
 					if ( resp && resp.success ) {
 						$pre.text(resp.data.content);
@@ -159,6 +177,11 @@ function stars_myob_debug_page(): void {
 					}
 				}
 			});
+		});
+
+		// ── Close log ──────────────────────────────────────────────────────
+		$('#stars-debug-log-close').on('click', function(){
+			$('#stars-debug-log-content').hide();
 		});
 
 		// ── Delete log ────────────────────────────────────────────────────
@@ -218,8 +241,8 @@ add_action( 'wp_ajax_stars_myob_debug_view_log', function () {
 	}
 
 	$file = isset( $_POST['file'] ) ? sanitize_file_name( wp_unslash( $_POST['file'] ) ) : '';
+	$mode = isset( $_POST['mode'] ) && $_POST['mode'] === 'summary' ? 'summary' : 'full';
 
-	// Only allow our own log files.
 	if ( ! preg_match( '/^myob-products-[\d_-]+\.log$/', $file ) ) {
 		wp_send_json_error( 'Invalid file name.' );
 	}
@@ -230,10 +253,55 @@ add_action( 'wp_ajax_stars_myob_debug_view_log', function () {
 		wp_send_json_error( 'File not found.' );
 	}
 
-	// Cap at 2MB to avoid giant payloads.
-	$content = file_get_contents( $path, false, null, 0, 2 * 1024 * 1024 );
+	if ( $mode === 'summary' ) {
+		// Return only lines before the JSON dump marker.
+		$lines   = [];
+		$handle  = fopen( $path, 'r' );
+		if ( $handle ) {
+			while ( ( $line = fgets( $handle ) ) !== false ) {
+				if ( strpos( $line, '=== BEGIN RAW JSON DUMP' ) !== false ) {
+					break;
+				}
+				$lines[] = rtrim( $line );
+			}
+			fclose( $handle );
+		}
+		wp_send_json_success( [ 'content' => implode( PHP_EOL, $lines ) ] );
+		return;
+	}
 
+	// Full log — cap at 2MB.
+	$content = file_get_contents( $path, false, null, 0, 2 * 1024 * 1024 );
 	wp_send_json_success( [ 'content' => $content ] );
+} );
+
+// ── AJAX: download log file ────────────────────────────────────────────────
+
+add_action( 'wp_ajax_stars_myob_debug_download_log', function () {
+	check_ajax_referer( 'stars_myob_debug' );
+
+	if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		wp_die( 'Permission denied.', 403 );
+	}
+
+	$file = isset( $_GET['file'] ) ? sanitize_file_name( wp_unslash( $_GET['file'] ) ) : '';
+
+	if ( ! preg_match( '/^myob-products-[\d_-]+\.log$/', $file ) ) {
+		wp_die( 'Invalid file name.', 400 );
+	}
+
+	$path = WC_MYOB_INTEGRATION_PLUGINDIR . 'debug/logs/' . $file;
+
+	if ( ! file_exists( $path ) ) {
+		wp_die( 'File not found.', 404 );
+	}
+
+	header( 'Content-Type: text/plain; charset=utf-8' );
+	header( 'Content-Disposition: attachment; filename="' . $file . '"' );
+	header( 'Content-Length: ' . filesize( $path ) );
+	header( 'Cache-Control: no-cache' );
+	readfile( $path );
+	exit;
 } );
 
 // ── AJAX: delete log file ──────────────────────────────────────────────────

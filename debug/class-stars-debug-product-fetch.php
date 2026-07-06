@@ -56,19 +56,11 @@ class Stars_Debug_Product_Fetch {
 
 		// ── Start ─────────────────────────────────────────────────────────
 		$this->write_line( '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] Starting MYOB product fetch' );
-		$this->write_line( 'Endpoint base   : ' . $this->connector->get_full_endpoint() );
-
-		// Log credential state (values masked, just presence).
+		$this->write_line( 'Endpoint : ' . $this->connector->get_full_endpoint() );
 		$config   = get_option( 'woocommerce_MYOB_integrations_settings', [] );
 		$username = isset( $config['WC_MYOB_company_file_username'] ) ? trim( $config['WC_MYOB_company_file_username'] ) : '';
-		$password = isset( $config['WC_MYOB_company_file_password'] ) ? trim( $config['WC_MYOB_company_file_password'] ) : '';
-		$this->write_line( 'access_token    : ' . ( get_option( 'MYOB_access_token' )      ? 'SET (length ' . strlen( get_option( 'MYOB_access_token' ) ) . ')' : 'MISSING' ) );
-		$this->write_line( 'client_id       : ' . ( get_option( 'WC_MYOB_client_id' )       ? 'SET' : 'MISSING' ) );
-		$this->write_line( 'company_file_id : ' . ( get_option( 'WC_MYOB_company_file_id' ) ?: 'MISSING' ) );
-		$this->write_line( 'cf_username     : ' . ( $username ? '"' . $username . '"' : 'EMPTY' ) );
-		$this->write_line( 'cf_password     : ' . ( $password ? 'SET' : 'EMPTY (using blank)' ) );
-		$this->write_line( 'token_timestamp : ' . gmdate( 'Y-m-d H:i:s', (int) get_option( 'WC_MYOB_refresh_token_timestamp' ) ) . ' UTC' );
-		$this->write_line( 'token_age_secs  : ' . ( time() - (int) get_option( 'WC_MYOB_refresh_token_timestamp' ) ) );
+		$this->write_line( 'Company file user : ' . ( $username ?: '(empty)' ) );
+		$this->write_line( str_repeat( '-', 80 ) );
 
 		$all_products = [];
 		$page         = 0;
@@ -79,17 +71,11 @@ class Stars_Debug_Product_Fetch {
 			$skip = $page * self::PAGE_SIZE;
 			$url  = $next_url ?? ( $this->connector->get_full_endpoint() . '/Inventory/Item?$top=' . self::PAGE_SIZE . '&$skip=' . $skip );
 
-			$this->write_line( '' );
-			$this->write_line( 'Fetching page ' . ( $page + 1 ) . ' → ' . $url );
+			$this->write_line( 'Page ' . ( $page + 1 ) . ' → ' . $url );
 
-			// Make the raw HTTP request so we can log the exact response code and body.
-			$raw = $this->connector->public_raw_get( $url );
-
-			// Log raw HTTP details first — this is the key diagnostic info.
+			$raw       = $this->connector->public_raw_get( $url );
 			$http_code = $raw['code'] ?? 0;
 			$body      = $raw['body'] ?? '';
-
-			$this->write_line( 'HTTP status     : ' . $http_code );
 
 			if ( $http_code !== 200 ) {
 				$error = 'Page ' . ( $page + 1 ) . ': HTTP ' . $http_code . ' — ' . wp_strip_all_tags( $body );
@@ -127,7 +113,7 @@ class Stars_Debug_Product_Fetch {
 
 			$items = $decoded->Items;
 			$count = count( $items );
-			$this->write_line( 'Items on page   : ' . $count );
+			$this->write_line( 'Page ' . ( $page + 1 ) . ': ' . $count . ' items received.' );
 
 			foreach ( $items as $item ) {
 				$all_products[] = $item;
@@ -152,15 +138,17 @@ class Stars_Debug_Product_Fetch {
 
 		// ── Write full JSON dump ──────────────────────────────────────────
 		$this->write_line( '' );
-		$this->write_line( '=== RAW JSON DUMP (' . $total . ' products) ===' );
-		file_put_contents( $this->log_file, json_encode( $all_products, JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
-
+		$this->write_line( str_repeat( '-', 80 ) );
+		$this->write_line( 'SUMMARY' );
+		$this->write_line( 'Total products : ' . $total );
+		$this->write_line( 'Pages fetched  : ' . $page );
+		$this->write_line( 'Status         : ' . ( empty( $errors ) ? 'OK' : 'ERRORS: ' . implode( ', ', $errors ) ) );
+		$this->write_line( '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] Fetch complete.' );
+		$this->write_line( str_repeat( '-', 80 ) );
 		$this->write_line( '' );
-		$this->write_line( '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] Fetch complete. Total products: ' . $total );
-
-		if ( ! empty( $errors ) ) {
-			$this->write_line( '[ERRORS] ' . implode( ' | ', $errors ) );
-		}
+		$this->write_line( '=== BEGIN RAW JSON DUMP (' . $total . ' products) ===' );
+		file_put_contents( $this->log_file, json_encode( $all_products, JSON_PRETTY_PRINT ) . PHP_EOL, FILE_APPEND );
+		$this->write_line( '=== END RAW JSON DUMP ===' );
 
 		return $this->result( empty( $errors ), $total,
 			empty( $errors )
@@ -183,10 +171,25 @@ class Stars_Debug_Product_Fetch {
 		}
 
 		foreach ( glob( $dir . 'myob-products-*.log' ) as $file ) {
+			// Quickly scan for total line to show in table.
+			$total = 'N/A';
+			$handle = fopen( $file, 'r' );
+			if ( $handle ) {
+				while ( ( $line = fgets( $handle ) ) !== false ) {
+					if ( strpos( $line, 'Total products :' ) !== false ) {
+						$parts = explode( ':', $line, 2 );
+						$total = trim( $parts[1] ?? 'N/A' );
+						break;
+					}
+				}
+				fclose( $handle );
+			}
+
 			$files[] = [
 				'name'     => basename( $file ),
 				'size'     => size_format( filesize( $file ) ),
 				'modified' => gmdate( 'Y-m-d H:i:s', filemtime( $file ) ) . ' UTC',
+				'total'    => $total,
 			];
 		}
 

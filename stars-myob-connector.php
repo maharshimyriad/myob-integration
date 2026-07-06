@@ -249,6 +249,7 @@ if (!class_exists('WC_MYOB_Integration')):
 			add_action('wp_ajax_opmc_myob_view_debug_logs', 'opmc_myob_view_debug_logs');
 			add_action('wp_ajax_opmc_myob_clear_sync_log', 'opmc_myob_clear_sync_log');
 			add_action('wp_ajax_opmc_myob_get_sync_log', 'opmc_myob_get_sync_log');
+			add_action('wp_ajax_stars_myob_disconnect', 'stars_myob_disconnect_ajax');
 
 			add_action('woocommerce_order_status_changed', array($this->connector, 'change_order_status'), 10, 4);
 			// add_action( 'save_post', array( $this->connector,'do_insert_product_in_myob' ), 10, 2); PLUGINS-635
@@ -870,6 +871,46 @@ endif; // class_exists WC_MYOB_Integration
 //
 //  Hooks are below for Ajax functions in Admin panel
 //
+
+/**
+ * AJAX handler — disconnect from MYOB by clearing all stored tokens and credentials.
+ * Leaves WooCommerce settings (accounts, tax codes etc.) intact so the user
+ * doesn't have to re-configure everything after reconnecting.
+ */
+function stars_myob_disconnect_ajax() {
+	check_ajax_referer( 'opmc_myob_security', 'security' );
+
+	if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		wp_send_json_error( 'Permission denied.' );
+	}
+
+	// Clear OAuth tokens.
+	delete_option( 'MYOB_access_token' );
+	delete_option( 'MYOB_access_refresh_token' );
+	delete_option( 'MYOB_access_token_type' );
+	delete_option( 'MYOB_access_token_scope' );
+	delete_option( 'WC_MYOB_code' );
+
+	// Clear auth error flags so the UI doesn't show stale error banners.
+	delete_option( 'WC_MYOB_refresh_token_failed' );
+	delete_option( 'WC_MYOB_refresh_token_timestamp' );
+	update_option( 'WC_MYOB_api_unauthorized_count', 0 );
+
+	// Clear company file selection (forces re-selection after reconnect).
+	delete_option( 'WC_MYOB_company_file_id' );
+	delete_option( 'WC_MYOB_company_file_list' );
+
+	// Remove company_file_id from the main settings array too.
+	$settings = get_option( 'woocommerce_MYOB_integrations_settings', array() );
+	unset( $settings['WC_MYOB_company_file_id'] );
+	update_option( 'woocommerce_MYOB_integrations_settings', $settings );
+
+	// Clear keep-alive transients.
+	delete_transient( 'MYOB_keep_alive_transient' );
+	delete_transient( 'MYOB_keep_alive_run' );
+
+	wp_send_json_success( array( 'message' => 'Disconnected from MYOB.' ) );
+}
 
 
 /**
