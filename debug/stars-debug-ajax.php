@@ -12,18 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// ── Admin menu entry ──────────────────────────────────────────────────────
-
-add_action( 'admin_menu', function () {
-	add_submenu_page(
-		'woocommerce',
-		__( 'MYOB Debug Tools', 'stars-myob-connector' ),
-		__( 'MYOB Debug Tools', 'stars-myob-connector' ),
-		'manage_woocommerce',
-		'stars-myob-debug',
-		'stars_myob_debug_page'
-	);
-} );
+// ── Admin menu entry (removed — Debug Tools is now a tab in the MYOB settings page) ──
 
 // ── Admin page render ─────────────────────────────────────────────────────
 

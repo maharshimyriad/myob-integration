@@ -230,7 +230,8 @@ if (!class_exists('WC_MYOB_Integration')):
 
 			add_action('myob_process_product_sync', array($this, 'sync_product_from_myob_to_woo'));
 			add_action('admin_notices', array($this, 'admin_notices'));
-			add_action('admin_menu', array($this, 'register_myob_order_tools_page'));
+			// Order Tools and Debug Tools are now embedded in the MYOB settings page tabs.
+			// The standalone submenu pages have been removed.
 
 			// Scripts
 			add_action('admin_enqueue_scripts', array($this, 'settings_scripts'));

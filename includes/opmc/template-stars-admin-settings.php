@@ -49,6 +49,14 @@ $allowed['strong'] = array();
             data-panel="panel-debug-log" role="tab" aria-controls="panel-debug-log">
         <span class="dashicons dashicons-text-page"></span> Debug Log
     </button>
+    <button type="button" class="opmc-tab-btn" id="opmc-tab-order-tools"
+            data-panel="panel-order-tools" role="tab" aria-controls="panel-order-tools">
+        <span class="dashicons dashicons-cart"></span> Order Tools
+    </button>
+    <button type="button" class="opmc-tab-btn" id="opmc-tab-debug-tools"
+            data-panel="panel-debug-tools" role="tab" aria-controls="panel-debug-tools">
+        <span class="dashicons dashicons-admin-tools"></span> Debug Tools
+    </button>
     <?php endif; ?>
 </div>
 
@@ -249,6 +257,134 @@ $allowed['strong'] = array();
         <?php else : ?>
             <p class="opmc-log-empty">No debug log files found. Enable &ldquo;Debug Logging&rdquo; in Configuration and trigger a sync.</p>
         <?php endif; ?>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PANEL 5 – ORDER TOOLS
+     ══════════════════════════════════════════════════════════ -->
+<div id="panel-order-tools" class="opmc-panel" role="tabpanel" aria-labelledby="opmc-tab-order-tools">
+    <div class="opmc-panel-header">
+        <div>
+            <h2><span class="dashicons dashicons-cart"></span> Order Tools</h2>
+            <p>Sync or inspect individual WooCommerce orders against MYOB.</p>
+        </div>
+    </div>
+    <div class="opmc-panel-body">
+        <table class="form-table" role="presentation">
+            <tbody>
+                <tr>
+                    <th scope="row">
+                        <label for="opmc_myob_order_tools_order_number">
+                            <?php esc_html_e( 'Order ID / Number', 'stars-myob-connector' ); ?>
+                        </label>
+                    </th>
+                    <td>
+                        <input type="text"
+                            id="opmc_myob_order_tools_order_number"
+                            class="regular-text"
+                            placeholder="<?php echo esc_attr__( 'e.g. 43209', 'stars-myob-connector' ); ?>"
+                        />
+                        <p class="description">
+                            <?php esc_html_e( 'Enter the WooCommerce order ID or the order number shown in admin.', 'stars-myob-connector' ); ?>
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="margin-top:16px;">
+            <button type="button" class="button button-primary" id="opmc_myob_order_tools_sync_now">
+                <?php esc_html_e( 'Sync Now', 'stars-myob-connector' ); ?>
+            </button>
+            &nbsp;
+            <button type="button" class="button" id="opmc_myob_order_tools_view_now">
+                <?php esc_html_e( 'View Order in MYOB', 'stars-myob-connector' ); ?>
+            </button>
+        </div>
+        <div id="opmc_myob_order_tools_message" style="display:none;margin-top:16px;"></div>
+        <div id="opmc_myob_order_tools_result"  style="display:none;margin-top:16px;"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PANEL 6 – DEBUG TOOLS
+     ══════════════════════════════════════════════════════════ -->
+<div id="panel-debug-tools" class="opmc-panel" role="tabpanel" aria-labelledby="opmc-tab-debug-tools">
+    <div class="opmc-panel-header">
+        <div>
+            <h2><span class="dashicons dashicons-admin-tools"></span> Debug Tools</h2>
+            <p>Fetch and inspect raw data from MYOB for debugging purposes. Read-only — nothing is modified.</p>
+        </div>
+    </div>
+    <div class="opmc-panel-body">
+        <?php
+        require_once WC_MYOB_INTEGRATION_PLUGINDIR . 'debug/class-stars-debug-product-fetch.php';
+        $stars_debug_log_files = Stars_Debug_Product_Fetch::get_log_files();
+        ?>
+
+        <h3 style="margin-top:0;"><?php esc_html_e( 'Fetch All Products from MYOB', 'stars-myob-connector' ); ?></h3>
+        <p><?php esc_html_e( 'Fetches every product from your MYOB Inventory/Item endpoint and writes the full result to a timestamped log file.', 'stars-myob-connector' ); ?></p>
+
+        <button type="button" id="stars-debug-fetch-products" class="button button-primary">
+            <?php esc_html_e( 'Fetch Products Now', 'stars-myob-connector' ); ?>
+        </button>
+        <div id="stars-debug-result" style="margin-top:16px;display:none;"></div>
+
+        <?php if ( ! empty( $stars_debug_log_files ) ) : ?>
+        <hr style="margin:24px 0 16px;">
+        <h3><?php esc_html_e( 'Product Debug Logs', 'stars-myob-connector' ); ?></h3>
+        <table class="widefat striped" style="max-width:900px;">
+            <thead>
+                <tr>
+                    <th><?php esc_html_e( 'File', 'stars-myob-connector' ); ?></th>
+                    <th style="width:80px"><?php esc_html_e( 'Products', 'stars-myob-connector' ); ?></th>
+                    <th style="width:70px"><?php esc_html_e( 'Size', 'stars-myob-connector' ); ?></th>
+                    <th style="width:180px"><?php esc_html_e( 'Created (UTC)', 'stars-myob-connector' ); ?></th>
+                    <th><?php esc_html_e( 'Actions', 'stars-myob-connector' ); ?></th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ( $stars_debug_log_files as $lf ) : ?>
+                <tr>
+                    <td><code><?php echo esc_html( $lf['name'] ); ?></code></td>
+                    <td><?php echo esc_html( $lf['total'] ); ?></td>
+                    <td><?php echo esc_html( $lf['size'] ); ?></td>
+                    <td><?php echo esc_html( $lf['modified'] ); ?></td>
+                    <td style="white-space:nowrap;">
+                        <button type="button" class="button button-small stars-debug-view-log"
+                            data-file="<?php echo esc_attr( $lf['name'] ); ?>" data-mode="summary">
+                            <?php esc_html_e( 'Summary', 'stars-myob-connector' ); ?>
+                        </button>
+                        <button type="button" class="button button-small stars-debug-view-log"
+                            data-file="<?php echo esc_attr( $lf['name'] ); ?>" data-mode="full">
+                            <?php esc_html_e( 'Full Log', 'stars-myob-connector' ); ?>
+                        </button>
+                        <a href="<?php echo esc_url( wp_nonce_url(
+                            admin_url( 'admin-ajax.php?action=stars_myob_debug_download_log&file=' . rawurlencode( $lf['name'] ) ),
+                            'stars_myob_debug'
+                        ) ); ?>" class="button button-small">
+                            <?php esc_html_e( 'Download', 'stars-myob-connector' ); ?>
+                        </a>
+                        <button type="button" class="button button-small stars-debug-delete-log"
+                            data-file="<?php echo esc_attr( $lf['name'] ); ?>"
+                            style="color:#c0392b;">
+                            <?php esc_html_e( 'Delete', 'stars-myob-connector' ); ?>
+                        </button>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
+
+        <div id="stars-debug-log-content" style="margin-top:20px;display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <h3 id="stars-debug-log-title" style="margin:0;"></h3>
+                <button type="button" id="stars-debug-log-close" class="button button-small">&#10005; Close</button>
+            </div>
+            <pre id="stars-debug-log-pre"
+                style="background:#1e1e1e;color:#d4d4d4;border:1px solid #dcdcde;padding:16px;max-height:600px;overflow:auto;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;border-radius:4px;"></pre>
+        </div>
     </div>
 </div>
 
@@ -509,6 +645,72 @@ $allowed['strong'] = array();
                 jQuery('#opmc-retention-bar').hide();
                 loadSyncLog();
                 jQuery('#opmc-sync-log-count').text('');
+            }
+        });
+    });
+
+    // ── Debug Tools panel ─────────────────────────────────────────────────
+    var debugNonce = '<?php echo esc_js( wp_create_nonce( 'stars_myob_debug' ) ); ?>';
+
+    jQuery('#stars-debug-fetch-products').on('click', function () {
+        var $btn    = jQuery(this);
+        var $result = jQuery('#stars-debug-result');
+        $btn.prop('disabled', true).text('Fetching — please wait…');
+        $result.hide().empty();
+
+        jQuery.ajax({
+            url: OpmcMyobScriptAjax.ajaxurl, type: 'post', dataType: 'json',
+            data: { action: 'stars_myob_debug_fetch_products', security: debugNonce },
+            success: function (resp) {
+                $btn.prop('disabled', false).text('Fetch Products Now');
+                if (resp && resp.success) {
+                    $result.html('<div class="notice notice-success inline" style="margin:0"><p><strong>Done.</strong> ' +
+                        jQuery('<div/>').text(resp.data.message).html() +
+                        ' &nbsp; Log: <code>' + jQuery('<div/>').text(resp.data.log_file).html() + '</code></p></div>').show();
+                    setTimeout(function () { location.reload(); }, 2000);
+                } else {
+                    var msg = (resp && resp.data && resp.data.message) ? resp.data.message : 'Unknown error.';
+                    $result.html('<div class="notice notice-error inline" style="margin:0"><p>' + jQuery('<div/>').text(msg).html() + '</p></div>').show();
+                }
+            },
+            error: function (xhr) {
+                $btn.prop('disabled', false).text('Fetch Products Now');
+                $result.html('<div class="notice notice-error inline" style="margin:0"><p>AJAX error: ' + xhr.status + '</p></div>').show();
+            }
+        });
+    });
+
+    jQuery(document).on('click', '.stars-debug-view-log', function () {
+        var file  = jQuery(this).data('file');
+        var mode  = jQuery(this).data('mode') || 'full';
+        var $wrap = jQuery('#stars-debug-log-content');
+        var $pre  = jQuery('#stars-debug-log-pre');
+        jQuery('#stars-debug-log-title').text(file + (mode === 'summary' ? '  [summary]' : '  [full log]'));
+        $pre.text('Loading…');
+        $wrap.show()[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+        jQuery.ajax({
+            url: OpmcMyobScriptAjax.ajaxurl, type: 'post', dataType: 'json',
+            data: { action: 'stars_myob_debug_view_log', security: debugNonce, file: file, mode: mode },
+            success: function (resp) {
+                $pre.text(resp && resp.success ? resp.data.content : 'Error loading log.');
+            }
+        });
+    });
+
+    jQuery('#stars-debug-log-close').on('click', function () {
+        jQuery('#stars-debug-log-content').hide();
+    });
+
+    jQuery(document).on('click', '.stars-debug-delete-log', function () {
+        var file = jQuery(this).data('file');
+        if (!confirm('Delete log file: ' + file + '?')) { return; }
+        var $row = jQuery(this).closest('tr');
+        jQuery.ajax({
+            url: OpmcMyobScriptAjax.ajaxurl, type: 'post', dataType: 'json',
+            data: { action: 'stars_myob_debug_delete_log', security: debugNonce, file: file },
+            success: function (resp) {
+                if (resp && resp.success) { $row.fadeOut(); }
+                else { alert('Delete failed.'); }
             }
         });
     });
