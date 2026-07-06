@@ -3,7 +3,7 @@
  * Plugin Name: Stars MYOB AccountRight Connector for WooCommerce
  * Description: Connect WooCommerce to MYOB AccountRight — automatically create customers and invoices in MYOB when orders are placed.
  * Version: 1.0.0
- * Author: Aditya Dugar
+ * Author: Myriadsolutionz
  * Author URI: https://myriadsolutionz.com
  * WC tested up to: 9.3
  * WC requires at least: 2.6

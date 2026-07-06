@@ -86,7 +86,6 @@ This plugin connects to the MYOB AccountRight cloud API to sync customers, invoi
 
 * **What it is:** The MYOB AccountRight cloud API, provided by MYOB Operations Pty Ltd.
 * **What is sent and when:** Customer data (name, email, address), order and invoice data (line items, amounts, tax codes), product data (SKU, price, stock levels), and OAuth tokens are sent to the MYOB API when orders are placed, when settings are saved, and during scheduled cron synchronisation jobs. API credentials (access token, client ID, cftoken) are sent with every request for authentication.
-* **OAuth intermediary:** During the initial authentication flow, the plugin redirects through `https://myob-auth.nicer8.com/myob-authentication.html` (operated by the original plugin vendor) to exchange the authorisation code. You can replace this with your own redirect URI by registering your own MYOB developer application.
 * **Terms of Service:** https://www.myob.com/au/legal
 * **Privacy Policy:** https://www.myob.com/au/privacy-policy
 
@@ -130,9 +129,6 @@ This plugin integrates with **MYOB AccountRight** online company files via the A
 
 You need to register as a MYOB developer at [my.myob.com.au](https://my.myob.com.au) → Developer, then register an application to obtain your `client_id` and `client_secret`. Set the redirect URI to your site's `stars-myob-cronjob.php` URL to remove the third-party relay dependency entirely.
 
-= What is the nicer8.com relay page? =
-
-The MYOB OAuth flow requires the `redirect_uri` to exactly match what was registered with your API key. The original plugin registered a single fixed URL (`https://myob-auth.nicer8.com/myob-authentication.html`) to support multiple merchant sites. That page simply reads the `code` and `state` parameters returned by MYOB and forwards them to your site's callback. If you register your own MYOB developer application with your site's URL as the redirect URI, this relay is not needed.
 
 = How do I disconnect from MYOB? =
 
@@ -160,7 +156,7 @@ Yes. All user-facing strings use the `stars-myob-connector` text domain.
 
 = For support, please contact us at: =
 
-Please submit a support request at [https://starsuite.co/forms/ticket](https://starsuite.co/forms/ticket).
+Please submit a support request at [Here](https://starsuite.co/forms/ticket).
 
 == Screenshots ==
 
