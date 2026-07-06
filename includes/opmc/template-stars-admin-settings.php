@@ -276,17 +276,17 @@ $allowed['strong'] = array();
                 <tr>
                     <th scope="row">
                         <label for="opmc_myob_order_tools_order_number">
-                            <?php esc_html_e( 'Order ID / Number', 'stars-myob-connector' ); ?>
+                            <?php esc_html_e( 'Order ID / Number', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
                         </label>
                     </th>
                     <td>
                         <input type="text"
                             id="opmc_myob_order_tools_order_number"
                             class="regular-text"
-                            placeholder="<?php echo esc_attr__( 'e.g. 43209', 'stars-myob-connector' ); ?>"
+                            placeholder="<?php echo esc_attr__( 'e.g. 43209', 'stars-myob-accountright-connector-for-woocommerce' ); ?>"
                         />
                         <p class="description">
-                            <?php esc_html_e( 'Enter the WooCommerce order ID or the order number shown in admin.', 'stars-myob-connector' ); ?>
+                            <?php esc_html_e( 'Enter the WooCommerce order ID or the order number shown in admin.', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
                         </p>
                     </td>
                 </tr>
@@ -294,11 +294,11 @@ $allowed['strong'] = array();
         </table>
         <div style="margin-top:16px;">
             <button type="button" class="button button-primary" id="opmc_myob_order_tools_sync_now">
-                <?php esc_html_e( 'Sync Now', 'stars-myob-connector' ); ?>
+                <?php esc_html_e( 'Sync Now', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
             </button>
             &nbsp;
             <button type="button" class="button" id="opmc_myob_order_tools_view_now">
-                <?php esc_html_e( 'View Order in MYOB', 'stars-myob-connector' ); ?>
+                <?php esc_html_e( 'View Order in MYOB', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
             </button>
         </div>
         <div id="opmc_myob_order_tools_message" style="display:none;margin-top:16px;"></div>
@@ -322,25 +322,25 @@ $allowed['strong'] = array();
         $stars_debug_log_files = Stars_Debug_Product_Fetch::get_log_files();
         ?>
 
-        <h3 style="margin-top:0;"><?php esc_html_e( 'Fetch All Products from MYOB', 'stars-myob-connector' ); ?></h3>
-        <p><?php esc_html_e( 'Fetches every product from your MYOB Inventory/Item endpoint and writes the full result to a timestamped log file.', 'stars-myob-connector' ); ?></p>
+        <h3 style="margin-top:0;"><?php esc_html_e( 'Fetch All Products from MYOB', 'stars-myob-accountright-connector-for-woocommerce' ); ?></h3>
+        <p><?php esc_html_e( 'Fetches every product from your MYOB Inventory/Item endpoint and writes the full result to a timestamped log file.', 'stars-myob-accountright-connector-for-woocommerce' ); ?></p>
 
         <button type="button" id="stars-debug-fetch-products" class="button button-primary">
-            <?php esc_html_e( 'Fetch Products Now', 'stars-myob-connector' ); ?>
+            <?php esc_html_e( 'Fetch Products Now', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
         </button>
         <div id="stars-debug-result" style="margin-top:16px;display:none;"></div>
 
         <?php if ( ! empty( $stars_debug_log_files ) ) : ?>
         <hr style="margin:24px 0 16px;">
-        <h3><?php esc_html_e( 'Product Debug Logs', 'stars-myob-connector' ); ?></h3>
+        <h3><?php esc_html_e( 'Product Debug Logs', 'stars-myob-accountright-connector-for-woocommerce' ); ?></h3>
         <table class="widefat striped" style="max-width:900px;">
             <thead>
                 <tr>
-                    <th><?php esc_html_e( 'File', 'stars-myob-connector' ); ?></th>
-                    <th style="width:80px"><?php esc_html_e( 'Products', 'stars-myob-connector' ); ?></th>
-                    <th style="width:70px"><?php esc_html_e( 'Size', 'stars-myob-connector' ); ?></th>
-                    <th style="width:180px"><?php esc_html_e( 'Created (UTC)', 'stars-myob-connector' ); ?></th>
-                    <th><?php esc_html_e( 'Actions', 'stars-myob-connector' ); ?></th>
+                    <th><?php esc_html_e( 'File', 'stars-myob-accountright-connector-for-woocommerce' ); ?></th>
+                    <th style="width:80px"><?php esc_html_e( 'Products', 'stars-myob-accountright-connector-for-woocommerce' ); ?></th>
+                    <th style="width:70px"><?php esc_html_e( 'Size', 'stars-myob-accountright-connector-for-woocommerce' ); ?></th>
+                    <th style="width:180px"><?php esc_html_e( 'Created (UTC)', 'stars-myob-accountright-connector-for-woocommerce' ); ?></th>
+                    <th><?php esc_html_e( 'Actions', 'stars-myob-accountright-connector-for-woocommerce' ); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -353,22 +353,22 @@ $allowed['strong'] = array();
                     <td style="white-space:nowrap;">
                         <button type="button" class="button button-small stars-debug-view-log"
                             data-file="<?php echo esc_attr( $lf['name'] ); ?>" data-mode="summary">
-                            <?php esc_html_e( 'Summary', 'stars-myob-connector' ); ?>
+                            <?php esc_html_e( 'Summary', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
                         </button>
                         <button type="button" class="button button-small stars-debug-view-log"
                             data-file="<?php echo esc_attr( $lf['name'] ); ?>" data-mode="full">
-                            <?php esc_html_e( 'Full Log', 'stars-myob-connector' ); ?>
+                            <?php esc_html_e( 'Full Log', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
                         </button>
                         <a href="<?php echo esc_url( wp_nonce_url(
                             admin_url( 'admin-ajax.php?action=stars_myob_debug_download_log&file=' . rawurlencode( $lf['name'] ) ),
                             'stars_myob_debug'
                         ) ); ?>" class="button button-small">
-                            <?php esc_html_e( 'Download', 'stars-myob-connector' ); ?>
+                            <?php esc_html_e( 'Download', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
                         </a>
                         <button type="button" class="button button-small stars-debug-delete-log"
                             data-file="<?php echo esc_attr( $lf['name'] ); ?>"
                             style="color:#c0392b;">
-                            <?php esc_html_e( 'Delete', 'stars-myob-connector' ); ?>
+                            <?php esc_html_e( 'Delete', 'stars-myob-accountright-connector-for-woocommerce' ); ?>
                         </button>
                     </td>
                 </tr>

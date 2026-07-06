@@ -1,10 +1,13 @@
 <?php
 /**
  * Plugin Name: Stars MYOB AccountRight Connector for WooCommerce
+ * Plugin URI: https://starsdev.com.au/
  * Description: Connect WooCommerce to MYOB AccountRight — automatically create customers and invoices in MYOB when orders are placed.
  * Version: 1.0.0
- * Author: Myriadsolutionz
- * Author URI: https://myriadsolutionz.com
+ * Author: Aditya Dugar
+ * Author URI: https://starsdev.com.au/
+ * Text Domain: stars-myob-accountright-connector-for-woocommerce
+ * Domain Path: /languages
  * WC tested up to: 9.3
  * WC requires at least: 2.6
  *
@@ -108,7 +111,7 @@ add_action('admin_notices', 'opmc_myob_woocommerce_missing_notice');
  * Add a "Settings" link on the Plugins page next to Activate/Deactivate.
  */
 function stars_myob_plugin_action_links( $links ) {
-	$settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=integration&section=myob_integrations' ) ) . '">' . __( 'Settings', 'stars-myob-connector' ) . '</a>';
+	$settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=integration&section=myob_integrations' ) ) . '">' . __( 'Settings', 'stars-myob-accountright-connector-for-woocommerce' ) . '</a>';
 	array_unshift( $links, $settings_link );
 	return $links;
 }
@@ -283,8 +286,8 @@ if (!class_exists('WC_MYOB_Integration')):
 			// 			add_action( 'init', [ $this, 'download_pdf' ], 1 );
 			add_action('rest_api_init', function () {
 				register_rest_route('invoice', '/file_download', [
-					'methods' => 'GET',
-					'callback' => 'myplugin_download_invoice_pdf',
+					'methods'             => 'GET',
+					'callback'            => 'stars_myob_download_invoice_pdf',
 					'permission_callback' => '__return_true',
 				]);
 			});
@@ -382,8 +385,8 @@ if (!class_exists('WC_MYOB_Integration')):
 		public function load_css_and_script_for_order()
 		{
 			$plugin_url = plugin_dir_url(__FILE__);
-			wp_enqueue_style('style1', $plugin_url . 'assets/css/stars-myob.css', null, '1.6');
-			wp_enqueue_script('script2', $plugin_url . 'assets/js/order_page.js', null, '1.2');
+			wp_enqueue_style( 'style1', $plugin_url . 'assets/css/stars-myob.css', array(), '1.6' );
+			wp_enqueue_script( 'script2', $plugin_url . 'assets/js/order_page.js', array(), '1.2', true );
 		}
 
 
@@ -392,7 +395,7 @@ if (!class_exists('WC_MYOB_Integration')):
 		*/
 		public function settings_scripts()
 		{
-			wp_enqueue_script('opmc_myob_script', plugin_dir_url(__FILE__) . 'assets/js/stars-myob-scripts.js', null, '1.3');
+			wp_enqueue_script( 'opmc_myob_script', plugin_dir_url(__FILE__) . 'assets/js/stars-myob-scripts.js', array(), '1.3', true );
 			add_action('init', 'my_script_enqueuer');
 			wp_localize_script('opmc_myob_script', 'OpmcMyobScriptAjax', array(
 				'ajaxurl'    => admin_url('admin-ajax.php'),
@@ -446,7 +449,7 @@ if (!class_exists('WC_MYOB_Integration')):
 		 */
 		public function add_order_meta_box_actions($actions)
 		{
-			$actions['resync_order_to_myob'] = __('Resync order to MYOB');
+			$actions['resync_order_to_myob'] = __( 'Resync order to MYOB', 'stars-myob-accountright-connector-for-woocommerce' );
 			return $actions;
 		}
 
@@ -510,7 +513,7 @@ if (!class_exists('WC_MYOB_Integration')):
 
 			$schedules['WC_MYOB_cron_interval'] = array(
 				'interval' => 600,
-				'display' => __('MYOB 10 Minute Schedule', 'textdomain'),
+				'display' => __('MYOB 10 Minute Schedule', 'stars-myob-accountright-connector-for-woocommerce'),
 			);
 			$woocommerce_MYOB_integrations_settings = get_option('woocommerce_MYOB_integrations_settings');
 			$WC_MYOB_sync_period = isset($woocommerce_MYOB_integrations_settings['WC_MYOB_sync_period']) ? $woocommerce_MYOB_integrations_settings['WC_MYOB_sync_period'] : '';
@@ -520,18 +523,20 @@ if (!class_exists('WC_MYOB_Integration')):
 			$intervalPeriod = 86400 * $WC_MYOB_sync_period;
 			$schedules['WC_MYOB_cron_interval_sync'] = array(
 				'interval' => $intervalPeriod,
-				'display' => __('MYOB ' . $WC_MYOB_sync_period . ' Days Schedule', 'textdomain'),
+				// translators: %d is the number of days between syncs.
+				'display' => sprintf( __( 'MYOB %d Days Schedule', 'stars-myob-accountright-connector-for-woocommerce' ), $WC_MYOB_sync_period ),
 			);
 			/* For Copy customer card from MYOB in Woo */
 			$schedules['WC_MYOB_cron_interval_customer_sync'] = array(
 				'interval' => $intervalPeriod,
-				'display' => __('Sync customer in Woo from MYOB ' . $WC_MYOB_sync_period . ' Days Schedule', 'textdomain'),
+				// translators: %d is the number of days between syncs.
+				'display' => sprintf( __( 'Sync customer in Woo from MYOB %d Days Schedule', 'stars-myob-accountright-connector-for-woocommerce' ), $WC_MYOB_sync_period ),
 			);
 			
 			/* For Matrix Pricing Sync */
 			$schedules['WC_MYOB_cron_interval_product_pricing'] = array(
 				'interval' => 60, // Daily
-				'display' => __('MYOB Matrix Pricing Daily Schedule', 'textdomain'),
+				'display' => __('MYOB Matrix Pricing Daily Schedule', 'stars-myob-accountright-connector-for-woocommerce'),
 			);
 			
 			return $schedules;
@@ -635,7 +640,7 @@ if (!class_exists('WC_MYOB_Integration')):
 				add_meta_box(
 					'wf_child_letters'
 					,
-					__('MYOB AccountRight', 'myob_integrations')
+					__('MYOB AccountRight', 'stars-myob-accountright-connector-for-woocommerce')
 					,
 					array($this, 'myob_meta_box_content')
 					,
@@ -661,7 +666,7 @@ if (!class_exists('WC_MYOB_Integration')):
 				return $post_id;
 			}
 
-			if (!wp_verify_nonce(!empty($_POST['myob_job_nonce']) ? sanitize_text_field($_POST['myob_job_nonce']) : '', 'save_myob_nonce')) {
+			if (!wp_verify_nonce(!empty($_POST['myob_job_nonce']) ? sanitize_text_field(wp_unslash($_POST['myob_job_nonce'])) : '', 'save_myob_nonce')) {
 				return $post_id;
 			}
 
@@ -670,48 +675,32 @@ if (!class_exists('WC_MYOB_Integration')):
 				return $post_id;
 			}
 
-			$product_job = !empty($_POST['myob_product_job_code']) ? sanitize_text_field($_POST['myob_product_job_code']) : '';
+			$product_job = !empty($_POST['myob_product_job_code']) ? sanitize_text_field(wp_unslash($_POST['myob_product_job_code'])) : '';
 			update_post_meta($post_id, '_myob_product_job_code', $product_job);
 		}
 
 
 		/**
-		 * Initiates the process for product synchronisation between MYOB and WooCommerce. Called via a hook to the myob_process_product_sync cron job.
+		 * Initiates the process for product synchronisation between MYOB and WooCommerce.
 		 */
 		public function sync_product_from_myob_to_woo()
 		{
 			try {
 				$connector = new Opmc_Myob_Connector();
-				$connector->create_wc_log('Call to sync_product_from_myob_to_woo() in myob-integration');
+				$connector->create_wc_log( 'Call to sync_product_from_myob_to_woo() in myob-integration' );
 
-				// Log the creation of the connector
-				error_log('Opmc_Myob_Connector object created');
+				$myob_products = $connector->sync_products_from_myob();
 
-				if ($connector) {
-					error_log('Connector object exists');
-
-					$myob_products = $connector->sync_products_from_myob();
-
-					// Check if $myob_products is null or empty
-					if ($myob_products === null) {
-						error_log('MYOB products fetched: NULL');
-					} elseif (empty($myob_products)) {
-						error_log('MYOB products fetched: Empty array');
-					} else {
-						error_log('MYOB products fetched. Count: ' . count($myob_products));
-
-						// Log the raw data
-						error_log('Raw product data from MYOB: ' . json_encode($myob_products, JSON_PRETTY_PRINT));
-					}
-
-					// Additional logging
-					error_log('sync_product_from_myob_to_woo function completed');
+				if ( null === $myob_products ) {
+					$connector->create_wc_log( '[Product Sync] No products returned from MYOB (null).' );
+				} elseif ( empty( $myob_products ) ) {
+					$connector->create_wc_log( '[Product Sync] No products returned from MYOB (empty).' );
 				} else {
-					error_log('Connector object is null');
+					$connector->create_wc_log( '[Product Sync] Fetched ' . count( $myob_products ) . ' products from MYOB.' );
 				}
-			} catch (Exception $e) {
-				error_log('Error in sync_product_from_myob_to_woo: ' . $e->getMessage());
-				error_log('Stack trace: ' . $e->getTraceAsString());
+			} catch ( Exception $e ) {
+				$connector = new Opmc_Myob_Connector();
+				$connector->create_wc_log( '[Product Sync] Error: ' . $e->getMessage() );
 			}
 		}
 		/**
@@ -791,7 +780,8 @@ if (!class_exists('WC_MYOB_Integration')):
 		{
 			$connector = new Opmc_Myob_Connector();
 
-			if (isset($_GET['tab']) && isset($_GET['section']) && 'integration' == $_GET['tab'] && 'myob_integrations' == $_GET['section']) {
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only page detection, no form data processed.
+			if (isset($_GET['tab']) && isset($_GET['section']) && 'integration' == $_GET['tab'] && 'myob_integrations' == $_GET['section']) { // phpcs:enable
 
 				// Update WooCommerce product catalogue by adding new MYOB products
 				if ($myob_product_synced_count = get_option('myob_product_synced_count')) {
@@ -967,40 +957,40 @@ function opmc_get_invoice_for_individual()
 
 }
 
-function myplugin_download_invoice_pdf(WP_REST_Request $request)
-{
-	$uid = sanitize_text_field($request->get_param('invoice_uid'));
-	$type = sanitize_text_field($request->get_param('type'));
+function stars_myob_download_invoice_pdf( WP_REST_Request $request ) {
+	$uid  = sanitize_text_field( $request->get_param( 'invoice_uid' ) );
+	$type = sanitize_text_field( $request->get_param( 'type' ) );
 
-	if (empty($uid) || empty($type)) {
-		return new WP_Error('missing_params', 'Missing invoice UID or type.', ['status' => 400]);
+	if ( empty( $uid ) || empty( $type ) ) {
+		return new WP_Error( 'missing_params', 'Missing invoice UID or type.', array( 'status' => 400 ) );
 	}
 
 	try {
 		$connector = new Opmc_Myob_Connector();
-		$response = $connector->get_invoice_pdf($type, $uid);
+		$response  = $connector->get_invoice_pdf( $type, $uid );
 
-		if (is_wp_error($response)) {
-			return new WP_Error('pdf_error', $response->get_error_message(), ['status' => 500]);
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'pdf_error', $response->get_error_message(), array( 'status' => 500 ) );
 		}
 
-		$pdf_body = wp_remote_retrieve_body($response);
+		$pdf_body = wp_remote_retrieve_body( $response );
 
-		if (empty($pdf_body)) {
-			return new WP_Error('empty_pdf', 'The PDF content was empty.', ['status' => 500]);
+		if ( empty( $pdf_body ) ) {
+			return new WP_Error( 'empty_pdf', 'The PDF content was empty.', array( 'status' => 500 ) );
 		}
 
-		if (ob_get_length()) {
+		if ( ob_get_length() ) {
 			ob_end_clean();
 		}
 
-		header('Content-Type: application/pdf');
-		header('Content-Disposition: attachment; filename="invoice-' . $uid . '.pdf"');
+		header( 'Content-Type: application/pdf' );
+		header( 'Content-Disposition: attachment; filename="invoice-' . sanitize_file_name( $uid ) . '.pdf"' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- raw PDF binary, cannot be escaped
 		echo $pdf_body;
 		exit;
 
-	} catch (Exception $e) {
-		return new WP_Error('pdf_exception', $e->getMessage(), ['status' => 500]);
+	} catch ( Exception $e ) {
+		return new WP_Error( 'pdf_exception', $e->getMessage(), array( 'status' => 500 ) );
 	}
 }
 
@@ -1029,7 +1019,7 @@ function MYOB_sync_customer_by_email_ajax()
 		wp_send_json(['success' => false, 'message' => 'Security verification failed.']);
 	}
 
-	$customer_email = isset($_POST['customer_email']) ? sanitize_email($_POST['customer_email']) : '';
+	$customer_email = isset($_POST['customer_email']) ? sanitize_email(wp_unslash($_POST['customer_email']) : '';
 	if (empty($customer_email)) {
 		wp_send_json(['success' => false, 'message' => 'Invalid email.']);
 	}

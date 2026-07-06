@@ -3048,7 +3048,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 				$this->log('cron_schedule');
 				$schedules['WC_MYOB_further_attempt'] = array(
 					'interval' => 300,
-					'display' => __('MYOB Sync', 'textdomain'),
+					'display' => __('MYOB Sync', 'stars-myob-accountright-connector-for-woocommerce'),
 				);
 			}
 

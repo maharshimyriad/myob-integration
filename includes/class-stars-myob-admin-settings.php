@@ -25,7 +25,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 			Opmc_Logger::trace('Creating Settings Object');
 
 			$this->id = 'myob_integrations';
-			$this->method_title = __('MYOB AccountRight', 'stars-myob-connector');
+			$this->method_title = __('MYOB AccountRight', 'stars-myob-accountright-connector-for-woocommerce');
 			$this->method_description = __('Stars MYOB AccountRight Connector for WooCommerce');
 			// Load the settings.
 			$this->init_settings();
@@ -234,7 +234,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 
 			$this->form_fields = array(
 				'allow_access' => array(
-					'title' => __('Validate Access', 'stars-myob-connector'),
+					'title' => __('Validate Access', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'button',
 					'custom_attributes' => array(
 						'onclick' => "location.href='" . $this->assemble_myob_auth_url() . "'",
@@ -246,7 +246,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_company_file_username' => array(
-					'title' => __('Company File Username', 'stars-myob-connector'),
+					'title' => __('Company File Username', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'text',
 					'description' => __('Enter company file username, save changes, then click on the "Reload Accounts List" button.'),
 					'desc' => true,
@@ -256,7 +256,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_company_file_password' => array(
-					'title' => __('Company File Password (optional)', 'stars-myob-connector'),
+					'title' => __('Company File Password (optional)', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'password',
 					'description' => __('Add company file password (optional)'),
 					'desc' => true,
@@ -266,7 +266,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_company_file_id' => array(
-					'title' => __('Company File Pulldown', 'stars-myob-connector'),
+					'title' => __('Company File Pulldown', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Set MYOB Company File ID.'),
 					'desc' => true,
@@ -280,19 +280,19 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'reload_accounts_list' => array(
-					'title' => __('Connect to Company File', 'stars-myob-connector'),
+					'title' => __('Connect to Company File', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'button',
 					'custom_attributes' => array(
 						'onclick' => '',
 					),
-					//'description'       => __( 'Click the button to reload the lists of valid accounts from MYOB.', 'stars-myob-connector' ),
+					//'description'       => __( 'Click the button to reload the lists of valid accounts from MYOB.', 'stars-myob-accountright-connector-for-woocommerce' ),
 					'desc_tip' => false,
 					'class' => 'button-primary',
 					'tab' => 1,
 				),
 
 				'WC_MYOB_customer_id_prefix' => array(
-					'title' => __('Customer Display ID Prefix (optional)', 'stars-myob-connector'),
+					'title' => __('Customer Display ID Prefix (optional)', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'text',
 					'description' => __('This is prefixed to the customer display in MYOB when a new customer record is created by Woo.'),
 					'desc' => true,
@@ -301,7 +301,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'css' => 'max-width:7em;',
 				),
 				'WC_MYOB_guest_customer_display_id' => array(
-					'title' => __('Guest Customer Display ID', 'stars-myob-connector'),
+					'title' => __('Guest Customer Display ID', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'text',
 					'description' => __('If set, all purchases from "guest" customers on WooCommerce will be assigned to this customer in MYOB.  If blank, each guest purchase will create a new customer record in MYOB.'),
 					'desc' => true,
@@ -310,7 +310,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'css' => 'max-width:12em;',
 				),
 				'WC_MYOB_invoice_id_prefix' => array(
-					'title' => __('Invoice Display ID Prefix (required)', 'stars-myob-connector'),
+					'title' => __('Invoice Display ID Prefix (required)', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'text',
 					'description' => __('This string is prefixed to the invoice number in MYOB when a new invoice or order is created by Woo.'),
 					'desc' => true,
@@ -320,16 +320,16 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_sync_period' => array(
-					'title' => __('Sync Period in Days', 'stars-myob-connector'),
+					'title' => __('Sync Period in Days', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'number',
-					'description' => __('Set the number of days between MYOB synchronisations', 'stars-myob-connector'),
+					'description' => __('Set the number of days between MYOB synchronisations', 'stars-myob-accountright-connector-for-woocommerce'),
 					'desc_tip' => __('The number of days set here will determine the interval between stock syncs for your WooCommerce products, which will have their inventory levels updated to match their corresponding MYOB products in AccountRight.'),
 					'default' => 1,
 					'css' => 'max-width:7em;',
 					'min' => 1,
 				),
 				'WC_MYOB_invoice_type' => array(
-					'title' => __('Default MYOB Invoice Type', 'stars-myob-connector'),
+					'title' => __('Default MYOB Invoice Type', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('If there is a combination of MYOB product types within an order (Items, Service, Professional), then a MYOB invoice of this type will be created.'),
 					'desc' => false,
@@ -340,7 +340,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 
 
 				'WC_MYOB_income_account' => array(
-					'title' => __('Income Account', 'stars-myob-connector'),
+					'title' => __('Income Account', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Select the default income account to use for new products created by the plugin automatically in MYOB if they do not already exist.'),
 					'desc' => true,
@@ -349,7 +349,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'options' => $this->income_accounts,
 				),
 				'WC_MYOB_cogs_account' => array(
-					'title' => __('Cost Of Sales Account', 'stars-myob-connector'),
+					'title' => __('Cost Of Sales Account', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Select the default income account to use for new products created by the plugin automatically if they do not exist in MYOB already.   Cost of sales account is only used for "inventoried" items.'),
 					'desc' => true,
@@ -358,7 +358,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'options' => $this->cogs_accounts,
 				),
 				'WC_MYOB_asset_account' => array(
-					'title' => __('Asset Account', 'stars-myob-connector'),
+					'title' => __('Asset Account', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Select the default asset account to use for new products created by the plugin automatically if they do not exist in MYOB already. Please ensure that the account selected is registered as a bank account in MYOB.'),
 					'desc' => true,
@@ -369,7 +369,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 
 
 				'WC_MYOB_tax_code_new_products' => array(
-					'title' => __('Default Tax Code for New Products', 'stars-myob-connector'),
+					'title' => __('Default Tax Code for New Products', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Select the default tax code to use for new products created by the plugin automatically in MYOB if they do not exist.  This setting will be ignored for products already in MYOB and instead the chosen income account in MYOB will be used.'),
 					'desc' => true,
@@ -379,7 +379,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_tax_code_line_items' => array(
-					'title' => __('Default Tax Code for Line Items', 'stars-myob-connector'),
+					'title' => __('Default Tax Code for Line Items', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Select the default MYOB tax code to use for line items with an unrecognized tax code. If a line item appears with an unrecognised tax code, then the one selected here will be used for that item.'),
 					'desc' => true,
@@ -389,7 +389,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_freight_tax_code' => array(
-					'title' => __('Freight Tax Code', 'stars-myob-connector'),
+					'title' => __('Freight Tax Code', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Select the default tax code for freight charges.   This setting will be used independent of any settings in MYOB.'),
 					'desc' => true,
@@ -399,7 +399,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_job_code' => array(
-					'title' => __('Job Code', 'stars-myob-connector'),
+					'title' => __('Job Code', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Select the default job code.'),
 					'desc' => true,
@@ -409,7 +409,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_dis_account' => array(
-					'title' => __('Discount MYOB Account', 'stars-myob-connector'),
+					'title' => __('Discount MYOB Account', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Please select the account to use for the MYOB product, named "Discount". Please ensure that the account selected is registered as a bank account in MYOB.'),
 					'desc' => true,
@@ -419,7 +419,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'allows_handle_discounts' => array(
-					'title' => __('Handle Discount', 'stars-myob-connector'),
+					'title' => __('Handle Discount', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Enabling this option will begin a process to create descount items in MYOB to handle all discount related stuff.'),
 					'desc' => true,
@@ -428,7 +428,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_sync_type_inventory' => array(
-					'title' => __('Sync Product Inventory Type', 'stars-myob-connector'),
+					'title' => __('Sync Product Inventory Type', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'description' => __('Sync Woo Stock To Either MYOB "Available" or "Stock on Hand".'),
 					'desc' => true,
@@ -438,77 +438,77 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'allow_sync' => array(
-					'title' => __('Sync Product Inventory Levels', 'stars-myob-connector'),
+					'title' => __('Sync Product Inventory Levels', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'button',
 					'custom_attributes' => array(
 						'onclick' => '',
 					),
-					'description' => __('Clicking this button will begin a process to update the inventory levels for your WooCommerce products so that they match the inventory levels of their corresponding MYOB products in AccountRight (if they exist there)', 'stars-myob-connector'),
+					'description' => __('Clicking this button will begin a process to update the inventory levels for your WooCommerce products so that they match the inventory levels of their corresponding MYOB products in AccountRight (if they exist there)', 'stars-myob-accountright-connector-for-woocommerce'),
 					'desc_tip' => false,
 				),
 				'invoice_sync' => array(
-					'title' => __('Sync Invoices', 'stars-myob-connector'),
+					'title' => __('Sync Invoices', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'button',
 					'custom_attributes' => array(
 						'onclick' => '',
 					),
-					'description' => __('Get Invoices from MYOB', 'stars-myob-connector'),
+					'description' => __('Get Invoices from MYOB', 'stars-myob-accountright-connector-for-woocommerce'),
 					'desc_tip' => false,
 				),
 				'customers_sync' => array(
-					'title' => __('Sync Customers UID', 'stars-myob-connector'),
+					'title' => __('Sync Customers UID', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'button',
 					'custom_attributes' => array(
 						'onclick' => '',
 					),
-					'description' => __('Get Customer UID from MYOB', 'stars-myob-connector'),
+					'description' => __('Get Customer UID from MYOB', 'stars-myob-accountright-connector-for-woocommerce'),
 					'desc_tip' => false,
 				),
 
 
 				// Custom Field - Myriad Solutionz
 				'customer_email_sync' => array(
-					'title' => __('Sync Customer by Email', 'stars-myob-connector'),
+					'title' => __('Sync Customer by Email', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'input_button',
-					'button_text' => __('Sync Customer', 'stars-myob-connector'),
-					'placeholder' => __('Enter customer email', 'stars-myob-connector'),
-					'description' => __('Enter a WooCommerce customer email and click the button to sync that customer with MYOB.', 'stars-myob-connector'),
+					'button_text' => __('Sync Customer', 'stars-myob-accountright-connector-for-woocommerce'),
+					'placeholder' => __('Enter customer email', 'stars-myob-accountright-connector-for-woocommerce'),
+					'description' => __('Enter a WooCommerce customer email and click the button to sync that customer with MYOB.', 'stars-myob-accountright-connector-for-woocommerce'),
 					'desc_tip' => false,
 					'class' => 'button-secondary',
 				),
 
 				'product_sku_sync' => array(
-					'title' => __('Sync Product by SKU', 'stars-myob-connector'),
+					'title' => __('Sync Product by SKU', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'input_button',
-					'button_text' => __('Sync Product', 'stars-myob-connector'),
-					'placeholder' => __('Enter prodcut sku', 'stars-myob-connector'),
-					'description' => __('Enter a WooCommerce product sku and click the button to sync that product with MYOB.', 'stars-myob-connector'),
+					'button_text' => __('Sync Product', 'stars-myob-accountright-connector-for-woocommerce'),
+					'placeholder' => __('Enter prodcut sku', 'stars-myob-accountright-connector-for-woocommerce'),
+					'description' => __('Enter a WooCommerce product sku and click the button to sync that product with MYOB.', 'stars-myob-accountright-connector-for-woocommerce'),
 					'desc_tip' => false,
 					'class' => 'button-secondary',
 				),
 
 				'product_sku_view' => array(
-					'title' => __('View Product by SKU', 'stars-myob-connector'),
+					'title' => __('View Product by SKU', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'input_button',
-					'button_text' => __('View Product', 'stars-myob-connector'),
-					'placeholder' => __('Enter product sku', 'stars-myob-connector'),
-					'description' => __('Enter a product sku and click to view MYOB product details and tiered pricing.', 'stars-myob-connector'),
+					'button_text' => __('View Product', 'stars-myob-accountright-connector-for-woocommerce'),
+					'placeholder' => __('Enter product sku', 'stars-myob-accountright-connector-for-woocommerce'),
+					'description' => __('Enter a product sku and click to view MYOB product details and tiered pricing.', 'stars-myob-accountright-connector-for-woocommerce'),
 					'desc_tip' => false,
 					'class' => 'button-secondary',
 				),
 				
 			// 		'order_number_sync' => array(
-			// 	'title' => __('Sync Order by Number', 'stars-myob-connector'),
+			// 	'title' => __('Sync Order by Number', 'stars-myob-accountright-connector-for-woocommerce'),
 			// 	'type' => 'input_button',
-			// 	'button_text' => __('Sync Order', 'stars-myob-connector'),
-			// 	'placeholder' => __('Enter order number', 'stars-myob-connector'),
-			// 	'description' => __('Enter a WooCommerce order number and click the button to sync that order with MYOB.', 'stars-myob-connector'),
+			// 	'button_text' => __('Sync Order', 'stars-myob-accountright-connector-for-woocommerce'),
+			// 	'placeholder' => __('Enter order number', 'stars-myob-accountright-connector-for-woocommerce'),
+			// 	'description' => __('Enter a WooCommerce order number and click the button to sync that order with MYOB.', 'stars-myob-accountright-connector-for-woocommerce'),
 			// 	'desc_tip' => false,
 			// 	'class' => 'button-secondary',
 			// ),
 
 				'WC_OPMC_only_sync_item_inventory' => array(
-					'title' => __('Only Sync MYOB Item Inventory', 'stars-myob-connector'),
+					'title' => __('Only Sync MYOB Item Inventory', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Do not create sales orders, invoices or any other function in MYOB.'),
 					'desc' => true,
@@ -517,7 +517,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_stop_auto_inventory_sync' => array(
-					'title' => __('Stop Auto Product Inventory Sync', 'stars-myob-connector'),
+					'title' => __('Stop Auto Product Inventory Sync', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Stop auto sync products inventory in Woo from MYOB.'),
 					'desc' => true,
@@ -526,7 +526,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_enable_product_pricing_sync' => array(
-					'title'       => __( 'Enable Auto Product Pricing Sync', 'stars-myob-connector' ),
+					'title'       => __( 'Enable Auto Product Pricing Sync', 'stars-myob-accountright-connector-for-woocommerce' ),
 					'type'        => 'checkbox',
 					'description' => __( 'Automatically sync product tiered/level pricing from the MYOB price matrix every minute.' ),
 					'desc'        => true,
@@ -535,7 +535,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_create_product_to_woo_cron' => array(
-					'title' => __('Automatically copy products from MYOB to WooCommerce', 'stars-myob-connector'),
+					'title' => __('Automatically copy products from MYOB to WooCommerce', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Automatically copy products from MYOB to WooCommerce'),
 					'desc' => true,
@@ -544,7 +544,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_do_not_copy_inactive_product_from_myob' => array(
-					'title' => __('Do Not copy inactive products from MYOB to WooCommerce', 'stars-myob-connector'),
+					'title' => __('Do Not copy inactive products from MYOB to WooCommerce', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Do Not copy inactive products from MYOB to WooCommerce.'),
 					'desc_tip' => __('This setting relates to the setting to ‘Automatically copy products from MYOB to WooCommerce’. If this setting is enabled, then the exclude inactive inventory items from the process for copying across MYOB products to WooCommerce'),
@@ -552,9 +552,9 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_fetch_items_frm_to_woo_batch_limit' => array(
-					'title' => __('Number Of Records Fetch Product Per Request', 'stars-myob-connector'),
+					'title' => __('Number Of Records Fetch Product Per Request', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'number',
-					'description' => __('Set Number Of Records Fetch Product Per Request.', 'stars-myob-connector'),
+					'description' => __('Set Number Of Records Fetch Product Per Request.', 'stars-myob-accountright-connector-for-woocommerce'),
 					'desc_tip' => false,
 					'default' => 25,
 					'css' => 'max-width:7em;',
@@ -565,7 +565,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_create_product_to_woo_cron_frequency' => array(
-					'title' => __('Cron Frequency For Product', 'stars-myob-connector'),
+					'title' => __('Cron Frequency For Product', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'select',
 					'label' => 'Cron Frequency For Product',
 					'default' => '',
@@ -580,17 +580,17 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 
 
 				// 'export_product_to_myob' => array(
-				//  'title'              => __( 'Export All Products to MYOB', 'stars-myob-connector' ),
+				//  'title'              => __( 'Export All Products to MYOB', 'stars-myob-accountright-connector-for-woocommerce' ),
 				//  'type'               => 'button',
 				//  'custom_attributes'  => array(
 				//      'onclick' => '',
 				//  ),
-				//  'description'        => __( 'Export all WooCommerce products to MYOB that are not already in AccountRight.', 'stars-myob-connector' ),
+				//  'description'        => __( 'Export all WooCommerce products to MYOB that are not already in AccountRight.', 'stars-myob-accountright-connector-for-woocommerce' ),
 				//  'desc_tip'           => false,
 				// ), PLUGINS-1285
 
 				'WC_OPMC_enable_myob_invoice_number' => array(
-					'title' => __('Allow MYOB To Set The Invoice Number', 'stars-myob-connector'),
+					'title' => __('Allow MYOB To Set The Invoice Number', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Allow MYOB to set the Invoice number, rather than passing the Woo Order number.<br> Be very careful before you disable this setting. Once you disable it, you will not be able to enable it again, as MYOB supports only one way sync for invoice numbers.'),
 					'desc_tip' => __('When this plugin creates MYOB orders and invoices in AccountRight based on your WooCommerce orders, they need an optional invoice number. By default this setting is enabled.<br>If you disable this setting, then by default, that number will be a combination of the prefix you’ve set as the ‘Invoice Display ID Prefix’ and the WooCommerce order number (e.g. ‘Woo-88’).<br>Be very careful before you disable this setting. Once you disable it, you will not be able to enable it again, as MYOB supports only one way sync for invoice numbers.'),
@@ -598,7 +598,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_enable_product_create' => array(
-					'title' => __('Create Product in MYOB if Not Found', 'stars-myob-connector'),
+					'title' => __('Create Product in MYOB if Not Found', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Create product in MYOB if not found.'),
 					'desc' => true,
@@ -609,7 +609,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				/* PLUGINS-2273 */
 
 				'WC_OPMC_support_variation_product' => array(
-					'title' => __('Support Variation Product in MYOB', 'stars-myob-connector'),
+					'title' => __('Support Variation Product in MYOB', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('With this setting enabled, corresponding MYOB products will be created from WooCommerce variation line items based on variation SKUs, if they’re not already in AccountRight, when creating MYOB orders and invoices.'),
 					'desc' => true,
@@ -619,7 +619,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				/* PLUGINS-2273 End*/
 
 				'WC_OPMC_create_guest_as_customer' => array(
-					'title' => __('Create Customer with Email for Guest ', 'stars-myob-connector'),
+					'title' => __('Create Customer with Email for Guest ', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Creates a MYOB customer for guest users in WooCommerce based off their email. If the guest email is taken in MYOB, the customer UID is used instead.'),
 					'desc' => true,
@@ -628,7 +628,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_auto_copy_customer_from_myob' => array(
-					'title' => __('Automatically copy Customer Cards from MYOB to WooCommerce', 'stars-myob-connector'),
+					'title' => __('Automatically copy Customer Cards from MYOB to WooCommerce', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Automatically copy Customer Cards from MYOB to WooCommerce.'),
 					'desc' => true,
@@ -637,7 +637,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_create_closed_invoices' => array(
-					'title' => __('Create Closed Invoices', 'stars-myob-connector'),
+					'title' => __('Create Closed Invoices', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('If selected, invoices created by WooCommerce will be closed, otherwise they will remain open. Note: a bank account (in asset accounts) must be selected to create closed invoices. If orders are set to be created instead of invoices, this setting will be overridden regardless of selection.'),
 					'desc' => true,
@@ -646,7 +646,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_create_order_instead_of_invoice' => array(
-					'title' => __('Create Orders Instead of Invoices', 'stars-myob-connector'),
+					'title' => __('Create Orders Instead of Invoices', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('If selected, an MYOB order will be created instead of an MYOB invoice for WooCommerce purchases.'),
 					'desc' => true,
@@ -655,7 +655,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_create_orders_when_on_hold' => array(
-					'title' => __('Create Orders when On-Hold', 'stars-myob-connector'),
+					'title' => __('Create Orders when On-Hold', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('If selected, an MYOB order will be created when a WooCommerce order is on-hold.'),
 					'desc' => true,
@@ -663,7 +663,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'default' => 'no',
 				),
 				'WC_MYOB_search_by_customer_name' => array(
-					'title' => __('Search Customer by Name', 'stars-myob-connector'),
+					'title' => __('Search Customer by Name', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Enable this option to allow searching for customers by their name in MYOB AccountRight. Useful when you have multiple customers from the same customer name.'),
 					'desc' => true,
@@ -672,7 +672,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_search_by_company' => array(
-					'title' => __('Search Customer by Company Name', 'stars-myob-connector'),
+					'title' => __('Search Customer by Company Name', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Enable this option to allow searching for customers by their company name in MYOB AccountRight. Useful when you have multiple customers from the same company.'),
 					'desc' => true,
@@ -681,7 +681,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_MYOB_search_by_email' => array(
-					'title' => __('Search Customer by Email', 'stars-myob-connector'),
+					'title' => __('Search Customer by Email', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Enable this option to allow searching for customers by their email in MYOB AccountRight. Useful when you have multiple customers from the same customer email.'),
 					'desc' => true,
@@ -690,7 +690,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_set_default_customer_designation' => array(
-					'title' => __('Set MYOB Default Customer Designation', 'stars-myob-connector'),
+					'title' => __('Set MYOB Default Customer Designation', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('If not selected, the MYOB sets the Customer Designation to Company, if the customer fills out the Company field on Woo Checkout.'),
 					'desc' => true,
@@ -699,7 +699,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_enable_product_bulk_action' => array(
-					'title' => __('Enable Product Sync Bulk Action', 'stars-myob-connector'),
+					'title' => __('Enable Product Sync Bulk Action', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('Toggle this setting to enable or disable the option to sync multiple products to MYOB from the WooCommerce Products page using bulk actions.'),
 					'desc' => true,
@@ -707,7 +707,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'default' => 'no',
 				),
 				'WC_OPMC_enable_debug_logging' => array(
-					'title' => __('Enable Debug Logging', 'stars-myob-connector'),
+					'title' => __('Enable Debug Logging', 'stars-myob-accountright-connector-for-woocommerce'),
 					'type' => 'checkbox',
 					'description' => __('If enabled, detailed debugging logs will be created on your server.   Caution- these logs can quickly become very large and fill your server hard disk!'),
 					'desc' => true,
@@ -716,33 +716,33 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				),
 
 				'WC_OPMC_tiered_pricing_pro' => array(
-					'title'       => __( 'Tiered Pricing Table Pro (Role-Based)', 'stars-myob-connector' ),
+					'title'       => __( 'Tiered Pricing Table Pro (Role-Based)', 'stars-myob-accountright-connector-for-woocommerce' ),
 					'type'        => 'checkbox',
-					'description' => __( 'Enable if you have the <strong>Pro version</strong> of the Tiered Pricing Table plugin. When enabled, all six MYOB price levels (LevelA–LevelF) are synced to role-based pricing rules. When disabled, only LevelA quantity breaks are written to the standard <code>_fixed_price_rules</code> meta key used by the free version.', 'stars-myob-connector' ),
+					'description' => __( 'Enable if you have the <strong>Pro version</strong> of the Tiered Pricing Table plugin. When enabled, all six MYOB price levels (LevelA–LevelF) are synced to role-based pricing rules. When disabled, only LevelA quantity breaks are written to the standard <code>_fixed_price_rules</code> meta key used by the free version.', 'stars-myob-accountright-connector-for-woocommerce' ),
 					'desc'        => true,
-					'desc_tip'    => __( 'Pro mode writes per-level meta keys (_LevelA_fixed_price_rules, etc.) read by the Pro version of Tiered Pricing Table for role-based pricing. Free mode writes a single _fixed_price_rules key using LevelA prices only, which the free version reads. If unsure, leave this unchecked.', 'stars-myob-connector' ),
+					'desc_tip'    => __( 'Pro mode writes per-level meta keys (_LevelA_fixed_price_rules, etc.) read by the Pro version of Tiered Pricing Table for role-based pricing. Free mode writes a single _fixed_price_rules key using LevelA prices only, which the free version reads. If unsure, leave this unchecked.', 'stars-myob-accountright-connector-for-woocommerce' ),
 					'default'     => 'no',
 				),
 
 				'WC_OPMC_sync_log_retention' => array(
-					'title'       => __( 'Sync Log Retention Period', 'stars-myob-connector' ),
+					'title'       => __( 'Sync Log Retention Period', 'stars-myob-accountright-connector-for-woocommerce' ),
 					'type'        => 'select',
 					'description' => __( 'How long to keep entries in the Sync Log before they are automatically removed.' ),
 					'desc'        => true,
 					'desc_tip'    => __( 'The Sync Log is stored as a flat file on your server. Older entries beyond the selected period are purged automatically each time a new sync event is logged, keeping the file size manageable.' ),
 					'default'     => '7',
 					'options'     => array(
-						'1'   => __( '1 Day',     'stars-myob-connector' ),
-						'3'   => __( '3 Days',    'stars-myob-connector' ),
-						'7'   => __( '7 Days',    'stars-myob-connector' ),
-						'14'  => __( '14 Days',   'stars-myob-connector' ),
-						'21'  => __( '21 Days',   'stars-myob-connector' ),
-						'30'  => __( '1 Month',   'stars-myob-connector' ),
-						'60'  => __( '2 Months',  'stars-myob-connector' ),
-						'90'  => __( '3 Months',  'stars-myob-connector' ),
-						'180' => __( '6 Months',  'stars-myob-connector' ),
-						'270' => __( '9 Months',  'stars-myob-connector' ),
-						'365' => __( '1 Year',    'stars-myob-connector' ),
+						'1'   => __( '1 Day',     'stars-myob-accountright-connector-for-woocommerce' ),
+						'3'   => __( '3 Days',    'stars-myob-accountright-connector-for-woocommerce' ),
+						'7'   => __( '7 Days',    'stars-myob-accountright-connector-for-woocommerce' ),
+						'14'  => __( '14 Days',   'stars-myob-accountright-connector-for-woocommerce' ),
+						'21'  => __( '21 Days',   'stars-myob-accountright-connector-for-woocommerce' ),
+						'30'  => __( '1 Month',   'stars-myob-accountright-connector-for-woocommerce' ),
+						'60'  => __( '2 Months',  'stars-myob-accountright-connector-for-woocommerce' ),
+						'90'  => __( '3 Months',  'stars-myob-accountright-connector-for-woocommerce' ),
+						'180' => __( '6 Months',  'stars-myob-accountright-connector-for-woocommerce' ),
+						'270' => __( '9 Months',  'stars-myob-accountright-connector-for-woocommerce' ),
+						'365' => __( '1 Year',    'stars-myob-accountright-connector-for-woocommerce' ),
 					),
 				),
 			);
@@ -788,7 +788,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 			if (isset($_SERVER['QUERY_STRING'])) {
 				$validL = parse_str(sanitize_text_field($_SERVER['QUERY_STRING']), $params);
 				$setfont = $params['section'];
-				if ('myob_integrations' == $setfont) {
+				if ('stars-myob-accountright-connector-for-woocommerce' == $setfont) {
 
 					wp_register_style('Font_Awesome', 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css', array(), '1.0');
 					wp_enqueue_style('Font_Awesome');
@@ -835,7 +835,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				'description' => '',
 				'title' => '',
 				'placeholder' => '',
-				'button_text' => __('Submit', 'stars-myob-connector'),
+				'button_text' => __('Submit', 'stars-myob-accountright-connector-for-woocommerce'),
 				'disable' => false,
 			);
 
@@ -997,7 +997,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 				array(
 					'page' => 'wc-settings',
 					'tab' => 'integration',
-					'section' => 'myob_integrations',
+					'section' => 'stars-myob-accountright-connector-for-woocommerce',
 				),
 				admin_url('admin.php')
 			);
