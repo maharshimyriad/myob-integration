@@ -133,6 +133,18 @@
     vertical-align: top;
 }
 
+/* Button rows — vertically center the label with the button */
+.opmc-panel-body .form-table tr:has(button.button-secondary),
+.opmc-panel-body .form-table tr:has(button.button-primary) {
+    vertical-align: middle;
+}
+.opmc-panel-body .form-table tr:has(button.button-secondary) th,
+.opmc-panel-body .form-table tr:has(button.button-primary) th,
+.opmc-panel-body .form-table tr:has(button.button-secondary) td,
+.opmc-panel-body .form-table tr:has(button.button-primary) td {
+    vertical-align: middle;
+}
+
 .opmc-panel-body .form-table tr + tr th,
 .opmc-panel-body .form-table tr + tr td {
     border-top: 1px solid #f0f0f1;

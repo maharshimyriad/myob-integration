@@ -67,7 +67,6 @@ $allowed['strong'] = array();
                 <button type="button" id="stars-myob-disconnect" class="button"
                     style="color:#c0392b;border-color:#c0392b;"
                     title="Clear all stored tokens and disconnect from MYOB">
-                    <span class="dashicons dashicons-no" style="vertical-align:middle;margin-top:-2px;font-size:14px;"></span>
                     Disconnect
                 </button>
             </div>

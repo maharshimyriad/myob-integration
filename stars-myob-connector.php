@@ -382,7 +382,7 @@ if (!class_exists('WC_MYOB_Integration')):
 		public function load_css_and_script_for_order()
 		{
 			$plugin_url = plugin_dir_url(__FILE__);
-			wp_enqueue_style('style1', $plugin_url . 'assets/css/stars-myob.css', null, '1.5');
+			wp_enqueue_style('style1', $plugin_url . 'assets/css/stars-myob.css', null, '1.6');
 			wp_enqueue_script('script2', $plugin_url . 'assets/js/order_page.js', null, '1.2');
 		}
 
