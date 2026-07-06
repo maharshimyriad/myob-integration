@@ -2,7 +2,7 @@
 /**
  * MYOB connector
  *
- * @package WC_MYOB_Integration
+ * @package Stars_MYOB_Connector
  */
 
 if (!defined('ABSPATH')) {

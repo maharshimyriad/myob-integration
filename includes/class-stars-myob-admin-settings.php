@@ -1,8 +1,8 @@
 <?php
 /**
- *  WooCommerce MYOB Integration.
+ *  Stars MYOB AccountRight Connector for WooCommerce.
  *
- * @package   WooCommerce MYOB Integration
+ * @package   Stars_MYOB_Connector
  */
 
 require_once __DIR__ . '/opmc/class-stars-logger.php';

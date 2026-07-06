@@ -1,207 +1,212 @@
-*** WooCommerce MYOB Integration Changelog ***
+*** Stars MYOB AccountRight Connector for WooCommerce — Changelog ***
 
-2024-10-10 - version 4.9.5
-* Fix: PLUGINS-2713 - Duplicate display ID for guest customers.
-* Fix: PLUGINS-2704 - Sync customer notes to MYOB invoice/order.
+2025-07-06 - version 1.0.0
+* Initial release under Stars branding.
+* Plugin activates gracefully without WooCommerce — shows admin notice instead of fatal error.
+* Removed legacy third-party branding and internal ticket references.
+* Security: removed malicious file that allowed unauthorised server writes.
+* OAuth callback updated to stars-myob-cronjob.php.
+* All plugin files renamed to stars-* convention.
 
-2024-09-23 - version 4.9.4
-* Update: PLUGINS-2700 - Enhance logging for "Resync Order to MYOB" action.
-* Fix: PLUGINS-2611 - Improve Handling of myob_product_synced_count in Product Synchronization.
-* Fix: PLUGINS-2665 - Display notification at start of product queueing for importing of products.
-* Fix: PLUGINS-2666 - Fix cURL Timeout Error During Product Import.
+--- Previous feature history (sanitised) ---
 
-2024-09-10 - version 4.9.3
-* Update: PLUGINS-2582 - Product Sync Bulk Setting | MYOB Settings are incorrectly Labelled / Commented | Two settings have the same comment.
+version 4.9.5
+* Fixed duplicate display ID for guest customers.
+* Sync customer notes to MYOB invoice and order.
 
-2024-08-05 - version 4.9.2
-* Fix: PLUGINS-2482 - Incorrect display (admin notice) of total products during sync process.
-* Update: PLUGINS-2583 - Replace PLUGINURL with PLUGINDIR for file operations in MYOB integration plugin.
-* Fix: PLUGINS-2585 - Fix invalid email handling in WooCommerce customer import from MYOB.
-* Update: PLUGINS-2595 - Enhance Logging for Debugging Product Import Issues in MYOB and WooCommerce Integration.
+version 4.9.4
+* Enhanced logging for manual order resync action.
+* Improved handling of product sync count during synchronisation.
+* Added notification at start of product import queue.
+* Fixed cURL timeout error during product import.
 
-2024-05-15 - version 4.9.1
-* Update: PLUGINS-2558 - Disable the email search when the search by name or company name is enabled.
+version 4.9.3
+* Corrected labelling of product sync bulk settings.
 
-2024-03-14 - version 4.9.0
-* Add: PLUGINS-2273 - Variable Product Support one way from Woo to MYOB. 
+version 4.9.2
+* Fixed incorrect display of total product count during sync.
+* Replaced plugin URL with plugin directory path for file operations.
+* Fixed invalid email handling when importing customers from MYOB.
+* Enhanced logging for product import debugging.
 
-2024-03-08 - version 4.8.0
-* Add: PLUGINS-2493 - Search Feature for Individual Customer Names.
-* Add: PLUGINS-2412 - Add Income account for tracking sales field to WooCommerce.
+version 4.9.1
+* Disabled email search when search by name or company name is enabled.
 
-2024-03-05 - version 4.7.0
-* Fix: PLUGINS-2484 - Remove hardcoded Customer Payment Name and Memo.
-* Fix: PLUGINS-2199 - Fix order status changed to failed after invoice syncing.
-* Add: PLUGINS-2345 - Add Woo MYOB logs into the MYOB settings.
+version 4.9.0
+* Added variable product support (one-way, Woo to MYOB).
 
-2024-01-10 - version 4.6.1
-* Fix: PLUGINS-2389 - Woo QI Test Issues.
+version 4.8.0
+* Added individual customer name search.
+* Added income account field for tracking sales in WooCommerce.
 
-2023-12-19 - version 4.6.0
-* New: PLUGINS-2405 - Add Company Name search functionality.
+version 4.7.0
+* Removed hardcoded customer payment name and memo.
+* Fixed order status incorrectly changing to failed after invoice sync.
+* Added MYOB sync logs to plugin settings page.
 
-2023-11-06 - version 4.5.2
-* Fix: PLUGINS-2311 - Resolve declare_compatibility issue with WooCommerce 8.1.1. 
-* Fix: PLUGINS-2304 - Fix Import feature not working.
+version 4.6.1
+* Various stability fixes.
 
-2023-07-24 - version 4.5.1
-* Update: PLUGINS-1913 - Woo HPOS Compatibility Audit/Upgrade.
+version 4.6.0
+* Added company name search functionality.
 
-2023-04-17 - version 4.5.0
-* New: PLUGINS-1319 - Multi site support.
-* Fix: PLUGINS-1979 - Processed MYOB order indicates the order has not synced to woo / won't manually sync from woo.
+version 4.5.2
+* Fixed WooCommerce HPOS compatibility declaration.
+* Fixed product import not working.
 
-2023-04-11 - version 4.4.0
-* Fix: PLUGINS-2011 - Issue with guest orders not working.
+version 4.5.1
+* HPOS compatibility audit and upgrade.
 
-2023-01-10 - version 4.3.0
-* PLUGINS-1461 - Add: Support for handling coupons.
-* PLUGINS-1630 - New: Sync logged in Customers by email.
+version 4.5.0
+* Added multi-site support.
+* Fixed manually synced orders incorrectly showing as not synced.
 
-2022-12-12 - version 4.2.0
-* PLUGINS-963 - Optimize signup process.
+version 4.4.0
+* Fixed guest orders not processing correctly.
 
-2022-11-11 - version 4.1.0
-* PLUGINS-1238 - Fix error when replacing the file of the activated plugin.
-* PLUGINS-1284 - Add a setting to configure the batch size when synching products from MYOB to WooCommerce.
+version 4.3.0
+* Added support for handling coupons.
+* Added ability to sync logged-in customers by email.
 
-2022-11-04 - version 4.0.0
-* PLUGINS-1844 - Fix Import Pagination with large amount of products.
-* PLUGINS-1729 - Resolve error related to Tax when Invoice Sync is expected.
-* PLUGINS-1357 - New feature to optionally sync product inventories only.
+version 4.2.0
+* Optimised signup and onboarding process.
 
-2022-10-18 - version 3.9.0
-* PLUGINS-1789 - Add indication to plugins settings of validated credentials.
-* PLUGINS-1285 - Add a setting to manually export WooCommerce Products to MYOB.
-* PLUGINS-1737 - Fix MYOB Tax Code column width.
+version 4.1.0
+* Fixed error when replacing an activated plugin file.
+* Added setting to configure product sync batch size.
 
-2022-10-11 - version 3.8.0
-* PLUGINS-1668 - paginate import data from MYOB.
-* PLUGINS-1713 - Critical error fix.
+version 4.0.0
+* Fixed import pagination for large product catalogues.
+* Resolved tax error during invoice sync.
+* Added setting to sync product inventory levels only.
 
-2022-07-13 - version 3.7.0
-* PLUGINS-1571 - Improvements to correctly handle pagination.
-* PLUGINS-1253 - Fix invoices number not syncing properly.
+version 3.9.0
+* Added connection status indicator in plugin settings.
+* Added setting to manually export WooCommerce products to MYOB.
+* Fixed MYOB tax code column width.
 
-2022-07-05 - version 3.6.0
-* PLUGINS-183 - Sync new customer in WooCommerce when created in MYOB.
-* PLUGINS-1211 - Manual Payments improved sync.
-* PLUGINS-1629 - Invoice changed to closed on Woo change to completed for option Create Closed Invoices.
+version 3.8.0
+* Added paginated data import from MYOB.
+* Critical error fix.
 
-2022-05-05 - version 3.5.0
-* PLUGINS-1166 - Support for Sequential Order Numbering Plugin in WooCommerce for order numbering.
-* PLUGINS-1478 - Invoice and Order creation, expand for WooCommerce 'Failed' to 'Processing' status change.
-* PLUGINS-1538 - Woo SKUs above 30 characters Issue. MYOB has char limit of 30.
+version 3.7.0
+* Improved pagination handling.
+* Fixed invoice numbers not syncing correctly.
 
-2022-04-20 - version 3.4.0
-* PLUGINS-1523 - Fix auto sync on upgrade when sync unchecked.
-* PLUGINS-1359 - Add bulk actions to apply MYOB tax codes to products.
+version 3.6.0
+* Added sync of new customers from MYOB to WooCommerce.
+* Improved manual payments sync.
+* Invoice now closes when WooCommerce order is set to completed.
 
-2022-04-11 - version 3.3.0
-* PLUGINS-1291 - Put the debug log file under WooCommerce logs.
+version 3.5.0
+* Added support for Sequential Order Numbering plugin.
+* Expanded invoice and order creation for failed-to-processing status changes.
+* Fixed SKUs above 30 characters (MYOB character limit).
 
-2022-04-06 - version 3.2.0
-* PLUGINS-1398 - Handle pagination.
-* PLUGINS-1393 - Exclude inactive inventory items from the process for copying across MYOB products to WooCommerce.
+version 3.4.0
+* Fixed auto-sync on upgrade when sync is unchecked.
+* Added bulk actions for applying MYOB tax codes to products.
 
-2022-03-30 - version 3.1.0
-* PLUGINS-1442 - Functionality to stop plugin syncing stock automatically without disabling woo stock management.
-* PLUGINS-1441 - Logging of invoice creation failure with a 400 error. 
+version 3.3.0
+* Moved debug log file under WooCommerce logs.
 
-2022-03-08 - version 3.0.0
-* PLUGINS-1298 - Fix manually sync inventory levels
-* PLUGINS-1297 - Fix MYOB Sync status updates
-* PLUGINS-1207 - Add tooltip hints in MYOB settings page
-* PLUGINS-1471 - Fix automatic product sync from MYOB to Woo
-* PLUGINS-1472 - Fix allow MYOB to set the Invoice Number
+version 3.2.0
+* Improved pagination handling.
+* Excluded inactive inventory items from MYOB-to-WooCommerce product copy.
 
-2022-01-25 - version 2.9.0
-* PLUGINS-1301 - Introduce product level tax code configuration alongside our current automatic tax system
-* PLUGINS-1237 - Fix existing settings getting lost when plugin was deactivated
+version 3.1.0
+* Added setting to stop automatic stock sync without disabling WooCommerce stock management.
+* Added logging for invoice creation failures with 400 errors.
 
-2021-12-09 - version 2.8.0
-* PLUGINS-635 - Support sync of large product catalogs.
-* PLUGINS-1123 - Correct admin url function.
+version 3.0.0
+* Fixed manual inventory level sync.
+* Fixed MYOB sync status updates.
+* Added tooltip hints on settings page.
+* Fixed automatic product sync from MYOB to WooCommerce.
+* Fixed allow-MYOB-to-set-invoice-number setting.
 
-2021-11-19 - version 2.7.0
-* PLUGINS-1127 - Stock sync setting options.
-* PLUGINS-1215 - Synced products indicator.
+version 2.9.0
+* Added product-level tax code configuration.
+* Fixed settings being lost on plugin deactivation.
 
-2021-11-12 - version 2.6.0
-* PLUGINS-1125 - Import Customer Shipping details
-* PLUGINS-1126 - Show discount in MYOB.
+version 2.8.0
+* Added support for syncing large product catalogues.
+* Fixed admin URL function.
 
-2021-11-03 - version 2.5.0
-* PLUGINS-1130 - New Setting for MYOB Customer Card Type.
-* PLUGINS-264 - New Invoice Types.
-* PLUGINS-1129 - Setting for MYOB Invoice no.
-* PLUGINS-1011 - Optional Prefix.
-* PLUGINS-1172 - TimeZones for invoices.
-* PLUGINS-1128 - Pass additional Customer data to MYOB.
+version 2.7.0
+* Added stock sync setting options.
+* Added synced products indicator.
 
-2021-10-14 - version 2.4.0
-* PLUGINS-1176 - Display more accessible errors to users
-* PLUGINS-1226 - Hotfix for "Uncaught Error: Call to a member function empty_cart() on null"
-* PLUGINS-1205 - Add a default MYOB tax code to send to MYOB when a WC product's tax class is not recognised by our plugin. Error 400 Fix.
-* PLUGINS-1184 - Add a feature to manually sync an order/invoice from WooCommerce to MYOB
+version 2.6.0
+* Added import of customer shipping details.
+* Added discount display in MYOB.
 
-2021-09-17 - version 2.3.0
-* PLUGINS-1202 - Basic support for manual payments including Direct Debit, Cheque and COD. Remove error reporting.
+version 2.5.0
+* Added setting for MYOB customer card type.
+* Added new invoice types.
+* Added setting for MYOB invoice number.
+* Added optional invoice prefix.
+* Added timezone support for invoices.
+* Added additional customer data fields passed to MYOB.
 
-2021-09-07 - version 2.2.0
-* PLUGINS-1163 - Customer address now passed to MYOB as Payee address.
-* PLUGINS-1194 - Improve user interface of validation pages.
+version 2.4.0
+* Improved error messages shown to users.
+* Fixed uncaught error on empty cart.
+* Added default MYOB tax code for unrecognised WooCommerce tax classes.
+* Added manual order/invoice sync from WooCommerce to MYOB.
 
-2021-08-23 - version 2.1.0
-* PLUGINS-1167 - Handle both GST and no tax line items in orders.
+version 2.3.0
+* Added basic support for manual payments including direct debit, cheque and COD.
 
-2021-08-11 - version 2.0.0
-* PLUGINS-631 - Asynchronous sync on checkout to improve speed. 
+version 2.2.0
+* Customer address now passed to MYOB as payee address.
+* Improved validation page UI.
 
-2021-07-30 - version 1.9.0
-* PLUGINS-1124 - New setting for Order or Invoice.
+version 2.1.0
+* Added support for orders containing both GST and no-tax line items.
 
-2021-07-26 - version 1.8.0
-* PLUGINS-1119 - Payment handling features.
+version 2.0.0
+* Asynchronous sync on checkout to improve performance.
 
-2021-07-02 - version 1.7.0
-* PLUGINS-181 - Invoice now includes job code field.
-* PLUGINS-924 - Invoice now includes description field.
+version 1.9.0
+* Added setting to choose order or invoice creation in MYOB.
 
-2021-06-24 - version 1.6.0
-* Feature - PLUGINS-1092 - Add support for WooCommerce Subscriptions.
+version 1.8.0
+* Added payment handling features.
 
-2021-06-16 - version 1.5.1
-* Fix - PLUGINS-1101 - Endpoint bug fix.
+version 1.7.0
+* Invoice now includes job code field.
+* Invoice now includes description field.
 
-2021-02-22 - version 1.5.0
-* Fix - PLUGINS-827 MYOB - Added cron job for product sync
-* Fix - PLUGINS-830 MYOB - Added fields for company file user credentails and used that for accessing files.
-* Fix - PlUGINS-820(partial) MYOB - Creating MYOB Entry after successful payment (specially for few gateways where order is initially created as pending payment).
-* Fix - PlUGINS-788 MYOB - Fixed prefix issue for the invoice numbers. 
+version 1.6.0
+* Added support for WooCommerce Subscriptions.
 
-2020-11-16 - version 1.4.0
-* Fix - PLUGINS-797 MYOB - Keep the connection alive
+version 1.5.1
+* Fixed endpoint bug.
 
-2020-09-11 - version 1.3.0
-* Fix - PLUGINS-632	MYOB - Handle 401 Authentication error
-* Fix - PLUGINS-567	MYOB - Fix authentication to use single developer key
-* Fix - PLUGINS-660	MYOB - Make the refresh of accounts lists manual
-* Fix - problems with admin screen
+version 1.5.0
+* Added cron job for product sync.
+* Added company file username and password fields.
+* Fixed invoice creation after successful payment for deferred payment gateways.
+* Fixed invoice number prefix issue.
 
-2020-08-17 - version 1.2.0
-* Fix - Refactored code
+version 1.4.0
+* Added keep-alive mechanism for MYOB connection.
 
-2020-06-15 - version 1.1.0
-* Fix - PLUGINS-303 Add missing CSS file
-* Feature - PLUGINS-182 Add product sync button in admin setting
-* Feature - PLUGINS-201 Add Expense Account,Cost Of Sale Account, Asset Account in admin setting
-* Fix - Price sync issue in MYOB App
-* Fix - Quantity Sync Issue in MYOB App
-* Fix - invoice creation with multiple product in MYOB APP.
+version 1.3.0
+* Fixed 401 authentication error handling.
+* Fixed authentication to use single developer key.
+* Made accounts list refresh manual.
 
-2020-03-13 - version 1.0.1
-* Fix - Plugin Activation Issue
+version 1.2.0
+* Code refactor and stability improvements.
 
-2019-04-24 - version 1.0.0
-* First Release.
+version 1.1.0
+* Added missing CSS file.
+* Added product sync button in admin settings.
+* Added expense, cost of sale, and asset account fields.
+* Fixed price and quantity sync issues.
+* Fixed invoice creation with multiple products.
+
+version 1.0.1
+* Fixed plugin activation issue.

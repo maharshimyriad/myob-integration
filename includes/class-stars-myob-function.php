@@ -3,11 +3,9 @@
 
 
 /**
-
- *  WooCommerce MYOB Integration.
+ *  Stars MYOB AccountRight Connector for WooCommerce.
  *
- * @package   WooCommerce MYOB Integration
- * 
+ * @package   Stars_MYOB_Connector
  */
 
 
@@ -95,3 +93,5 @@ class WC_Myob_API_Functions {
 }
 
 new WC_Myob_API_Functions();
+
+

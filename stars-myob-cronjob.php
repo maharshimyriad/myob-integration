@@ -39,7 +39,7 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>OPMC MYOB Validation.</title>
+	<title>Stars MYOB Authentication</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<?php
@@ -57,7 +57,7 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 <div class="container" style="margin-top:50px">
 	<div class="row">
 		<div class="col">
-			<?php echo '<img src="' . esc_url( plugins_url( 'assets/images/opmc_logo.png', __FILE__ ) ) . '" class="img-fluid mx-auto d-block" alt="OPMC"> '; ?>
+			<?php echo '<img src="' . esc_url( plugins_url( 'assets/images/myob_logo.png', __FILE__ ) ) . '" class="img-fluid mx-auto d-block" alt="Stars"> '; ?>
 		</div>
 		<div class="col">
 			<?php echo '<img src="' . esc_url( plugins_url( 'assets/images/myob_logo.png', __FILE__ ) ) . '" class="img-fluid mx-auto d-block" alt="MYOB"> '; ?>
