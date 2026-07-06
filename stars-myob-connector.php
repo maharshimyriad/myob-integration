@@ -106,6 +106,16 @@ function opmc_myob_woocommerce_missing_notice()
 add_action('admin_notices', 'opmc_myob_woocommerce_missing_notice');
 
 /**
+ * Add a "Settings" link on the Plugins page next to Activate/Deactivate.
+ */
+function stars_myob_plugin_action_links( $links ) {
+	$settings_link = '<a href="' . esc_url( admin_url( 'admin.php?page=wc-settings&tab=integration&section=myob_integrations' ) ) . '">' . __( 'Settings', 'stars-myob-connector' ) . '</a>';
+	array_unshift( $links, $settings_link );
+	return $links;
+}
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'stars_myob_plugin_action_links' );
+
+/**
  * Helper — returns true only when WooCommerce is available.
  */
 function opmc_myob_woocommerce_is_active()
