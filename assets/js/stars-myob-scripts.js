@@ -1,17 +1,21 @@
 jQuery(document).ready(function(){
 
-	var auth = document.getElementById('auth');
-	var auth1 = document.getElementById('auth1');
-	var account = jQuery('#woocommerce_myob_integrations_WC_MYOB_income_account').val();
+	// starsMyobConnected is localized from PHP — true only when access token
+	// AND company file ID are both present (i.e. fully connected).
+	var isConnected = ( typeof starsMyobConnected !== 'undefined' && starsMyobConnected === true );
+
+	var auth     = document.getElementById('auth');
+	var auth1    = document.getElementById('auth1');
+	var account  = jQuery('#woocommerce_myob_integrations_WC_MYOB_income_account').val();
 	var username = jQuery('#woocommerce_myob_integrations_WC_MYOB_company_file_username').val();
+
 	if (auth || auth1) {
-		jQuery('#woocommerce_myob_integrations_WC_MYOB_company_file_username').after('<span class="valid_error"><a href="https://woocommerce.com/document/myob/"><i class = "fa fa-close"></i></a><span>Username Invalid.</span></span>');
+		jQuery('#woocommerce_myob_integrations_WC_MYOB_company_file_username').after('<span class="valid_error"><a href="#"><i class="fa fa-close"></i></a><span>Username Invalid.</span></span>');
 		jQuery('#woocommerce_myob_integrations_WC_MYOB_company_file_id').css({ 'border': '2px solid red' });
-		
 	} else {
-		if (account != 0 && username != ''){
-			jQuery('#woocommerce_myob_integrations_WC_MYOB_company_file_username').after('<span class="valid_access"><i class = "fa fa-check"></i><span>Username Valid.</span></span>');
-			//jQuery('#woocommerce_myob_integrations_WC_MYOB_company_file_id ').css({ 'backgroundColor': '#90ee9069', 'color': '#006400' });
+		// Only show "Username Valid" when the plugin is actually connected.
+		if ( isConnected && username !== '' ) {
+			jQuery('#woocommerce_myob_integrations_WC_MYOB_company_file_username').after('<span class="valid_access"><i class="fa fa-check"></i><span>Username Valid.</span></span>');
 		}
 	}
 

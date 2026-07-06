@@ -392,9 +392,25 @@ if (!class_exists('WC_MYOB_Integration')):
 		*/
 		public function settings_scripts()
 		{
-			wp_enqueue_script('opmc_myob_script', plugin_dir_url(__FILE__) . 'assets/js/stars-myob-scripts.js', null, '1.2');
+			wp_enqueue_script('opmc_myob_script', plugin_dir_url(__FILE__) . 'assets/js/stars-myob-scripts.js', null, '1.3');
 			add_action('init', 'my_script_enqueuer');
-			wp_localize_script('opmc_myob_script', 'OpmcMyobScriptAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'ajax_nonce' => wp_create_nonce('opmc_myob_security')));
+			wp_localize_script('opmc_myob_script', 'OpmcMyobScriptAjax', array(
+				'ajaxurl'    => admin_url('admin-ajax.php'),
+				'ajax_nonce' => wp_create_nonce('opmc_myob_security'),
+			));
+
+			// Pass connection state to JS so the "Username Valid" badge only
+			// shows when there is an active token + company file ID.
+			$_settings   = get_option('woocommerce_MYOB_integrations_settings', array());
+			$_cf_id      = isset($_settings['WC_MYOB_company_file_id']) ? $_settings['WC_MYOB_company_file_id'] : '';
+			$_cf_user    = isset($_settings['WC_MYOB_company_file_username']) ? trim($_settings['WC_MYOB_company_file_username']) : '';
+			$_token      = get_option('MYOB_access_token');
+			$_rf_failed  = get_option('WC_MYOB_refresh_token_failed');
+			$_unauth     = (int) get_option('WC_MYOB_api_unauthorized_count', 0);
+			$_connected  = ! empty($_token) && ! empty($_cf_id) && ! empty($_cf_user)
+				&& 'yes' !== $_rf_failed && 0 === $_unauth;
+
+			wp_localize_script('opmc_myob_script', 'starsMyobConnected', $_connected);
 		}
 
 		/**
