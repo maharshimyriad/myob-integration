@@ -1,11 +1,10 @@
 <?php
 /**
  * Plugin Name: Stars MYOB AccountRight Connector for WooCommerce
- * Plugin URI: https://starsdev.com.au/
  * Description: Connect WooCommerce to MYOB AccountRight — automatically create customers and invoices in MYOB when orders are placed.
  * Version: 1.0.0
  * Author: Aditya Dugar
- * Author URI: https://starsdev.com.au/
+ * Author URI: https://myriadsolutionz.com
  * WC tested up to: 9.3
  * WC requires at least: 2.6
  *
@@ -438,22 +437,8 @@ if (!class_exists('WC_MYOB_Integration')):
 			return $integrations;
 		}
 
-		public function register_myob_order_tools_page()
-		{
-			add_submenu_page(
-				'woocommerce',
-				__('MYOB Order Tools', 'stars-myob-connector'),
-				__('MYOB Order Tools', 'stars-myob-connector'),
-				'manage_woocommerce',
-				'wc-myob-order-tools',
-				array($this, 'render_myob_order_tools_page')
-			);
-		}
-
-		public function render_myob_order_tools_page()
-		{
-			include WC_MYOB_INTEGRATION_PLUGINDIR . 'includes/admin-order-tools-page.php';
-		}
+		// Order Tools and Debug Tools page content is now embedded in the
+		// MYOB settings page as tabs — no standalone submenu pages needed.
 
 
 		/**
