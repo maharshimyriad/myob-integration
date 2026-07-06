@@ -1,21 +1,18 @@
 <?php
 /**
- * Plugin Name: WooCommerce MYOB Integration
- * Plugin URI: https://woocommerce.com/products/myob_integration/
- * Description: Create customer In MYOB and create invoice when order is placed.
+ * Plugin Name: Stars MYOB AccountRight Connector for WooCommerce
+ * Plugin URI: https://starsdev.com.au/
+ * Description: Connect WooCommerce to MYOB AccountRight — automatically create customers and invoices in MYOB when orders are placed.
  * Version: 4.9.5
- * Author: WooCommerce
- * Author URI: https://woocommerce.com
+ * Author: Stars
+ * Author URI: https://starsdev.com.au/
  * WC tested up to: 9.3
  * WC requires at least: 2.6
  *
- * Woo: 4830850:d27ed26e37c2d588dfa5fa5723d563fa
- *
- * Copyright: 2009-2018 WooCommerce.
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  *
- * @package WC_MYOB_Integration
+ * @package Stars_MYOB_Connector
  */
 
 //define ( 'OPMC_TRACE', '1' );
@@ -31,8 +28,25 @@ define('WC_MYOB_INTEGRATION_PLUGINDIR', plugin_dir_path(__FILE__));
 define('HOME_URL', home_url('/'));
 define('TOKEN_URI', 'https://secure.myob.com/oauth2/v1/authorize');
 
+/**
+ * Your MYOB API key (client_id).
+ * Register at: https://my.myob.com.au → Developer
+ * Set the redirect URI there to: WC_MYOB_INTEGRATION_PLUGINURL . 'stars-myob-cronjob.php'
+ */
 define('WC_MYOB_API_CLIENT_ID', '545dj2wk4r8gde2xs39mg366');
 
+/**
+ * OAuth redirect URI — where MYOB sends the user after they approve access.
+ *
+ * If you registered your own API key with MYOB and set the redirect URI
+ * directly to your stars-myob-cronjob.php URL, no intermediary is needed.
+ * Change this constant to plugin_dir_url(__FILE__) . 'stars-myob-cronjob.php'
+ * and remove the nicer8.com dependency entirely.
+ *
+ * Current mode: using nicer8.com intermediary (original behaviour).
+ * To switch: replace the value below with your own redirect URI and
+ *            update WC_MYOB_API_CLIENT_ID to match your registered API key.
+ */
 define('WC_MYOB_API_REDIRECT_URL', 'https://myob-auth.nicer8.com/myob-authentication.html');
 /**
  * Required functions.
@@ -41,20 +55,20 @@ if (!function_exists('woothemes_queue_update')) {
 	require_once 'woo-includes/woo-functions.php';
 }
 
-require_once 'includes/opmc/class-opmc-logger.php';
-require_once 'includes/opmc/class-opmc-myob-exception.php';
-require_once 'includes/class-opmc-myob-connector.php';
-require_once 'includes/myob-helper-functions.php';
-require_once 'opmc-hpos-compatibility-helper.php';
+require_once 'includes/opmc/class-stars-logger.php';
+require_once 'includes/opmc/class-stars-myob-exception.php';
+require_once 'includes/class-stars-myob-connector.php';
+require_once 'includes/stars-myob-helper-functions.php';
+require_once 'stars-hpos-compatibility-helper.php';
 
 if (version_compare(phpversion(), '7.1', '>=')) {
 	ini_set('serialize_precision', -1);
 }
 
 /**
- * Plugin updates
+ * Plugin updates — removed WooCommerce marketplace reference.
  */
-woothemes_queue_update(plugin_basename(__FILE__), 'd27ed26e37c2d588dfa5fa5723d563fa', '4830850');
+// woothemes_queue_update( plugin_basename( __FILE__ ), ... );
 
 
 //$MYOB_integrations = get_option('woocommerce_MYOB_integrations_settings');
@@ -327,7 +341,7 @@ if (!class_exists('WC_MYOB_Integration')):
 		public function load_css_and_script_for_order()
 		{
 			$plugin_url = plugin_dir_url(__FILE__);
-			wp_enqueue_style('style1', $plugin_url . 'assets/css/myob.css', null, '1.5');
+			wp_enqueue_style('style1', $plugin_url . 'assets/css/stars-myob.css', null, '1.5');
 			wp_enqueue_script('script2', $plugin_url . 'assets/js/order_page.js', null, '1.2');
 		}
 
@@ -337,7 +351,7 @@ if (!class_exists('WC_MYOB_Integration')):
 		*/
 		public function settings_scripts()
 		{
-			wp_enqueue_script('opmc_myob_script', plugin_dir_url(__FILE__) . 'assets/js/myob_scripts.js', null, '1.2');
+			wp_enqueue_script('opmc_myob_script', plugin_dir_url(__FILE__) . 'assets/js/stars-myob-scripts.js', null, '1.2');
 			add_action('init', 'my_script_enqueuer');
 			wp_localize_script('opmc_myob_script', 'OpmcMyobScriptAjax', array('ajaxurl' => admin_url('admin-ajax.php'), 'ajax_nonce' => wp_create_nonce('opmc_myob_security')));
 		}
@@ -351,7 +365,7 @@ if (!class_exists('WC_MYOB_Integration')):
 			// Checks if WooCommerce is installed.
 			if (class_exists('WC_Integration')) {
 				// Include our integration class.
-				include_once 'includes/class-wc-myob-admin-settings.php';
+				include_once 'includes/class-stars-myob-admin-settings.php';
 				// Register the integration.
 				add_filter('woocommerce_integrations', array($this, 'add_integration'));
 			}
@@ -370,8 +384,8 @@ if (!class_exists('WC_MYOB_Integration')):
 		{
 			add_submenu_page(
 				'woocommerce',
-				__('MYOB Order Tools', 'wc-myob-integration'),
-				__('MYOB Order Tools', 'wc-myob-integration'),
+				__('MYOB Order Tools', 'stars-myob-connector'),
+				__('MYOB Order Tools', 'stars-myob-connector'),
 				'manage_woocommerce',
 				'wc-myob-order-tools',
 				array($this, 'render_myob_order_tools_page')
@@ -594,7 +608,7 @@ if (!class_exists('WC_MYOB_Integration')):
 		public function myob_meta_box_content()
 		{
 			global $post;
-			include_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/opmc/template-opmc-product-meta-box.php';
+			include_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/opmc/template-stars-product-meta-box.php';
 		}
 
 		public function save_myob_meta_box($post_id)
@@ -1579,7 +1593,7 @@ function opmc_myob_get_sync_log() {
 		wp_send_json( array( 'success' => false, 'lines' => array() ) );
 	}
 
-	$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'opmc-myob-sync.log';
+	$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'stars-myob-sync.log';
 	$lines    = array();
 	$oldest_ts = null;
 
@@ -1624,7 +1638,7 @@ function opmc_myob_clear_sync_log() {
 	if ( ! check_ajax_referer( 'opmc_myob_security', 'security', false ) ) {
 		wp_send_json( array( 'success' => false, 'message' => 'Security check failed.' ) );
 	}
-	$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'opmc-myob-sync.log';
+	$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'stars-myob-sync.log';
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 	file_put_contents( $log_file, '' );
 	wp_send_json( array( 'success' => true, 'message' => 'Sync log cleared.' ) );
@@ -2070,14 +2084,14 @@ function downloads_bulk_action_admin_notice()
 
 /*
  * TEMP DEBUG BLOCK FOR ZERO PRICE ALERT MAIL FLOW.
- * View command:   Get-Content .\opmc-zero-price-alert-debug.log -Tail 200
- * Follow command: Get-Content .\opmc-zero-price-alert-debug.log -Wait
- * Cleanup command: Remove-Item .\opmc-zero-price-alert-debug.log
+ * View command:   Get-Content .\stars-zero-price-alert-debug.log -Tail 200
+ * Follow command: Get-Content .\stars-zero-price-alert-debug.log -Wait
+ * Cleanup command: Remove-Item .\stars-zero-price-alert-debug.log
  * Remove this block after debugging.
  */
 if ( ! function_exists( 'opmc_zero_price_debug_log' ) ) {
 	function opmc_zero_price_debug_log( $event, $context = array() ) {
-		$log_file = __DIR__ . DIRECTORY_SEPARATOR . 'opmc-zero-price-alert-debug.log';
+		$log_file = __DIR__ . DIRECTORY_SEPARATOR . 'stars-zero-price-alert-debug.log';
 		$line     = '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] ' . $event;
 
 		if ( ! empty( $context ) ) {

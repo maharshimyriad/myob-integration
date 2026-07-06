@@ -90,7 +90,7 @@ class WC_Myob_API_Functions {
 	*/
 	
 	public function wc_myob_redirect_uri() {
-		return WC_MYOB_INTEGRATION_PLUGINURL . 'MYOB-cronjob.php';
+		return WC_MYOB_INTEGRATION_PLUGINURL . 'stars-myob-cronjob.php';
 	}
 }
 

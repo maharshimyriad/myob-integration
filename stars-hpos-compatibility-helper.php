@@ -1,11 +1,10 @@
 <?php
 /**
- * Include the Opmc-hpos-compatibility-helper.php file if it hasn't been included before.
+ * Stars HPOS compatibility helper.
  *
- * This code includes the Opmc-hpos-compatibility-helper.php file in the current PHP script. It uses the include_once
- * function to ensure that the file is included only once, even if this code is executed multiple times.
+ * Provides wrapper functions for WooCommerce HPOS (Custom Order Tables) compatibility.
  *
- * @param string $file_path The path to the Opmc-hpos-compatibility-helper.php file.
+ * @param string $file_path The path to the stars-hpos-compatibility-helper.php file.
  * @return bool True if the file is successfully included, false otherwise.
  */
 

@@ -11,11 +11,11 @@ if (!defined('ABSPATH')) {
 // ini_set('display_errors', 1);
 // ini_set('display_startup_errors', 1);
 // error_reporting(E_ALL);
-require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/class-opmc-myob-loader.php';
-require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/class-opmc-myob-item-order.php';
-require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/class-opmc-myob-item-invoice.php';
-require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/opmc/class-opmc-erp-connector.php';
-require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/class-opmc-myob-order-to-invoice.php';
+require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/class-stars-myob-loader.php';
+require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/class-stars-myob-item-order.php';
+require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/class-stars-myob-item-invoice.php';
+require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/opmc/class-stars-erp-connector.php';
+require_once WC_MYOB_INTEGRATION_PLUGINDIR . '/includes/class-stars-myob-order-to-invoice.php';
 
 if (!class_exists('Opmc_Myob_Connector')):
 	#[\AllowDynamicProperties]
@@ -110,10 +110,10 @@ if (!class_exists('Opmc_Myob_Connector')):
 
 			$this->http_code = null;
 
-			require_once plugin_dir_path(__FILE__) . 'background-processes/class-opmc-order-batch-process.php';
-			require_once plugin_dir_path(__FILE__) . 'background-processes/class-opmc-product-import-process.php';
-			require_once plugin_dir_path(__FILE__) . 'background-processes/class-opmc-manual-payment-order-batch-process.php';
-			require_once plugin_dir_path(__FILE__) . 'background-processes/class-opmc-import-product-to-myob-process.php';
+			require_once plugin_dir_path(__FILE__) . 'background-processes/class-stars-order-batch-process.php';
+			require_once plugin_dir_path(__FILE__) . 'background-processes/class-stars-product-import-process.php';
+			require_once plugin_dir_path(__FILE__) . 'background-processes/class-stars-manual-payment-order-batch-process.php';
+			require_once plugin_dir_path(__FILE__) . 'background-processes/class-stars-import-product-to-myob-process.php';
 
 
 			$this->order_batch_process = new Opmc_Order_Batch_Process();
@@ -157,7 +157,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 
 		/**
 		 * Write a sync event to the plugin's own sync log file.
-		 * Stored in the plugin directory as opmc-myob-sync.log.
+		 * Stored in the plugin directory as stars-myob-sync.log.
 		 * Shown in the "Sync Log" tab of the plugin settings UI.
 		 * Automatically purges entries older than the configured retention period.
 		 *
@@ -165,7 +165,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 		 * @param string $level    One of: INFO, SUCCESS, WARNING, ERROR.
 		 */
 		public function create_sync_log( $message, $level = 'INFO' ) {
-			$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'opmc-myob-sync.log';
+			$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'stars-myob-sync.log';
 			$level    = strtoupper( $level );
 			$line     = '[' . gmdate( 'Y-m-d H:i:s' ) . ' UTC] [' . $level . '] ' . ( is_scalar( $message ) ? $message : wp_json_encode( $message ) ) . PHP_EOL;
 

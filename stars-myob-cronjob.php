@@ -1,25 +1,39 @@
 <?php
-	$api_client_id_static = '545dj2wk4r8gde2xs39mg366';
-
 	$wp_path = preg_replace('/wp-content(?!.*wp-content).*/', '', __DIR__);
- 
+
 	include $wp_path . 'wp-load.php';
 
-	require_once 'includes/opmc/class-opmc-logger.php';
-	require_once 'includes/class-opmc-myob-connector.php';
+	require_once 'includes/opmc/class-stars-logger.php';
+	require_once 'includes/class-stars-myob-connector.php';
 	$conn = new Opmc_Myob_Connector();
 	$conn->create_wc_log('Callback from MYOB');
 
+	// ── Resolve credentials ────────────────────────────────────────────────
+	// Direct mode: MYOB calls this file directly as the registered redirect_uri.
+	//   $_REQUEST will only contain `code` (and optionally `businessId`).
+	//   We read the API key/secret from the plugin constants / WP options.
+	//
+	// Relay (intermediary) mode: the relay page forwards everything here,
+	//   including api_client_id, api_secret and api_redirect_uri as params.
+	//   We use those forwarded values so the relay flow keeps working unchanged.
 
-if ( ( isset( $_REQUEST['code'] ) && !empty( $_REQUEST['code'] ) )
-	&& ( isset( $_REQUEST['api_client_id'] ) && !empty( $_REQUEST['api_client_id'] ) )
-	&& ( isset( $_REQUEST['api_secret'] ) && !empty( $_REQUEST['api_secret'] ) )
-	&& ( isset( $_REQUEST['api_redirect_uri'] ) && !empty($_REQUEST['api_redirect_uri'] ) ) ) {
-	
-	$code = sanitize_textarea_field($_REQUEST['code']);
-	$api_client_id = sanitize_textarea_field($_REQUEST['api_client_id']);
-	$api_secret = sanitize_textarea_field($_REQUEST['api_secret']);
-	$api_redirect_uri = sanitize_textarea_field($_REQUEST['api_redirect_uri']);
+	$code = isset( $_REQUEST['code'] ) ? sanitize_textarea_field( $_REQUEST['code'] ) : '';
+
+	if ( ! empty( $_REQUEST['api_client_id'] ) ) {
+		// Relay mode — credentials supplied by the intermediary page.
+		$api_client_id    = sanitize_textarea_field( $_REQUEST['api_client_id'] );
+		$api_secret       = sanitize_textarea_field( $_REQUEST['api_secret'] );
+		$api_redirect_uri = sanitize_textarea_field( $_REQUEST['api_redirect_uri'] );
+	} else {
+		// Direct mode — pull credentials from plugin constants / options.
+		$api_client_id    = defined( 'WC_MYOB_API_CLIENT_ID' ) ? WC_MYOB_API_CLIENT_ID : get_option( 'WC_MYOB_client_id' );
+		$api_secret       = get_option( 'WC_MYOB_secret' );
+		$api_redirect_uri = defined( 'WC_MYOB_API_REDIRECT_URL' ) ? WC_MYOB_API_REDIRECT_URL : plugin_dir_url( __FILE__ ) . 'stars-myob-cronjob.php';
+	}
+
+	$api_client_id_static = defined( 'WC_MYOB_API_CLIENT_ID' ) ? WC_MYOB_API_CLIENT_ID : '545dj2wk4r8gde2xs39mg366';
+
+if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && ! empty( $api_redirect_uri ) ) {
 
 	?>
 <!DOCTYPE html>
