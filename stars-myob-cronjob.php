@@ -133,9 +133,14 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 			$conn->create_wc_log('REFRESH TOKEN IS: ' . print_r($tokenData->refresh_token, 1));
 			$conn->access_token = $tokenData->access_token;
 			$conn->client_id = $api_client_id;
-			update_option( 'WC_MYOB_company_file_list', $conn->get_company_file() );
+			$company_files = $conn->get_company_file();
+			update_option( 'WC_MYOB_company_file_list', $company_files );
 
-			$res = get_company_file( $tokenData->access_token, $api_client_id );
+			$res = '';
+			if ( ! empty( $company_files ) && is_array( $company_files ) ) {
+				$company_file_ids = array_keys( $company_files );
+				$res = isset( $company_file_ids[0] ) ? $company_file_ids[0] : '';
+			}
 
 			$current_options = get_option( 'woocommerce_MYOB_integrations_settings', array() ); 
 
@@ -147,7 +152,6 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 				$merged_options = array_merge( $current_options, $desired_options );
 			
 				update_option( 'woocommerce_MYOB_integrations_settings', $merged_options );
-				update_option( 'WC_MYOB_company_file_list', $conn->get_company_file() );
 				update_option( 'WC_MYOB_refresh_token_timestamp', time() );
 
 				$conn->create_wc_log('[Auth] Company file ID saved: ' . $res);

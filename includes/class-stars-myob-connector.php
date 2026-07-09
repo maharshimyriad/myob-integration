@@ -904,39 +904,50 @@ if (!class_exists('Opmc_Myob_Connector')):
 				'Content-Type' => 'application/json',
 			);
 
-			$response = wp_remote_get($this->endpoint, array(
-				'timeout' => $this->http_timeout,
-				'headers' => $headers,
+			$endpoints = array_unique(array(
+				$this->endpoint,
+				'https://ar1.api.myob.com/accountright/',
 			));
 
-			if (is_wp_error($response)) {
-				$this->create_wc_log('[MYOB Company File] Request failed: ' . $response->get_error_message());
-				return array();
-			}
+			foreach ($endpoints as $endpoint) {
+				$response = wp_remote_get($endpoint, array(
+					'timeout' => $this->http_timeout,
+					'headers' => $headers,
+				));
 
-			$status_code = isset($response['response']['code']) ? (int) $response['response']['code'] : 0;
-			$this->create_wc_log('[MYOB Company File] Response code: ' . $status_code);
+				if (is_wp_error($response)) {
+					$this->create_wc_log('[MYOB Company File] Request failed for ' . $endpoint . ': ' . $response->get_error_message());
+					continue;
+				}
 
-			if (empty($response['body'])) {
-				$this->create_wc_log('[MYOB Company File] Empty response body.');
-				return array();
-			}
+				$status_code = isset($response['response']['code']) ? (int) $response['response']['code'] : 0;
+				$this->create_wc_log('[MYOB Company File] Response code from ' . $endpoint . ': ' . $status_code);
 
-			$company_files = json_decode($response['body']);
-			if (empty($company_files) || !is_array($company_files)) {
-				$this->create_wc_log('[MYOB Company File] Unexpected response body: ' . substr($response['body'], 0, 1000));
-				return array();
-			}
+				if (empty($response['body'])) {
+					$this->create_wc_log('[MYOB Company File] Empty response body from ' . $endpoint . '.');
+					continue;
+				}
 
-			$options = array();
-			foreach ($company_files as $company_file) {
-				if (isset($company_file->Id, $company_file->Name)) {
-					$options[$company_file->Id] = $company_file->Name;
+				$company_files = json_decode($response['body']);
+				if (empty($company_files) || !is_array($company_files)) {
+					$this->create_wc_log('[MYOB Company File] Unexpected response body from ' . $endpoint . ': ' . substr($response['body'], 0, 1000));
+					continue;
+				}
+
+				$options = array();
+				foreach ($company_files as $company_file) {
+					if (isset($company_file->Id, $company_file->Name)) {
+						$options[$company_file->Id] = $company_file->Name;
+					}
+				}
+
+				$this->create_wc_log('[MYOB Company File] Loaded ' . count($options) . ' company file(s) from ' . $endpoint . '.');
+				if (!empty($options)) {
+					return $options;
 				}
 			}
 
-			$this->create_wc_log('[MYOB Company File] Loaded ' . count($options) . ' company file(s).');
-			return $options;
+			return array();
 		}
 
 
