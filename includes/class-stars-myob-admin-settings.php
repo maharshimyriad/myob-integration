@@ -62,6 +62,10 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 
 
 			$this->company_files = get_option('WC_MYOB_company_file_list');
+			if (!is_array($this->company_files)) {
+				$this->company_files = array();
+			}
+			$this->company_files = array('' => __('Select a company file', 'stars-myob-accountright-connector-for-woocommerce')) + $this->company_files;
 			$this->income_accounts = get_option('WC_MYOB_income_accounts_list');
 			$this->cogs_accounts = get_option('WC_MYOB_cogs_accounts_list');
 			//$this->expense_accounts = $this->transient('WC_MYOB_expense_accounts_list', array($this->connector, 'get_expense_accounts'));
@@ -273,9 +277,6 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 					'desc_tip' => __('Once you have successfully connected with the MYOB server, your MYOB company file(s) should appear here.'),
 					'default' => '',
 					'options' => $this->company_files,
-					'custom_attributes' => array(
-						'class' => 'hide',
-					),
 					'tab' => 1,
 				),
 

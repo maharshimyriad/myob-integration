@@ -131,6 +131,9 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 			update_option( 'WC_MYOB_api_unauthorized_count', 0 );
 
 			$conn->create_wc_log('REFRESH TOKEN IS: ' . print_r($tokenData->refresh_token, 1));
+			$conn->access_token = $tokenData->access_token;
+			$conn->client_id = $api_client_id;
+			update_option( 'WC_MYOB_company_file_list', $conn->get_company_file() );
 
 			$res = get_company_file( $tokenData->access_token, $api_client_id );
 

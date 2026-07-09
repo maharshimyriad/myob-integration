@@ -891,13 +891,52 @@ if (!class_exists('Opmc_Myob_Connector')):
 
 		public function get_company_file()
 		{
-			return $this->get_remote_list($this->endpoint, null, function ($x) {
-				return $x->Name;
-			}, function ($x) {
-				return $x->Id;
-			}, function ($x) {
-				return $x;
-			});
+			if (empty($this->access_token) || empty($this->client_id)) {
+				$this->create_wc_log('[MYOB Company File] Missing access token or client id; cannot load company file list.');
+				return array();
+			}
+
+			$headers = array(
+				'Authorization' => 'Bearer ' . $this->access_token,
+				'x-myobapi-key' => $this->client_id,
+				'Accept-Encoding' => 'gzip,deflate',
+				'x-myobapi-version' => 'v2',
+				'Content-Type' => 'application/json',
+			);
+
+			$response = wp_remote_get($this->endpoint, array(
+				'timeout' => $this->http_timeout,
+				'headers' => $headers,
+			));
+
+			if (is_wp_error($response)) {
+				$this->create_wc_log('[MYOB Company File] Request failed: ' . $response->get_error_message());
+				return array();
+			}
+
+			$status_code = isset($response['response']['code']) ? (int) $response['response']['code'] : 0;
+			$this->create_wc_log('[MYOB Company File] Response code: ' . $status_code);
+
+			if (empty($response['body'])) {
+				$this->create_wc_log('[MYOB Company File] Empty response body.');
+				return array();
+			}
+
+			$company_files = json_decode($response['body']);
+			if (empty($company_files) || !is_array($company_files)) {
+				$this->create_wc_log('[MYOB Company File] Unexpected response body: ' . substr($response['body'], 0, 1000));
+				return array();
+			}
+
+			$options = array();
+			foreach ($company_files as $company_file) {
+				if (isset($company_file->Id, $company_file->Name)) {
+					$options[$company_file->Id] = $company_file->Name;
+				}
+			}
+
+			$this->create_wc_log('[MYOB Company File] Loaded ' . count($options) . ' company file(s).');
+			return $options;
 		}
 
 

@@ -9,12 +9,15 @@ $company_file_id       = $woo_settings['WC_MYOB_company_file_id'] ?? '';
 $company_file_username = $woo_settings['WC_MYOB_company_file_username'] ?? '';
 $unauthorized_count    = (int) get_option( 'WC_MYOB_api_unauthorized_count', 0 );
 $refresh_token_failed  = get_option( 'WC_MYOB_refresh_token_failed' );
+$access_token          = get_option( 'MYOB_access_token' );
 
-$is_connected = ! empty( $company_file_username )
-    && ! empty( $company_file_id )
-    && false !== $company_file_id
+$is_connected = ! empty( $access_token )
     && 'yes' !== $refresh_token_failed
     && 0 === $unauthorized_count;
+$is_company_file_connected = $is_connected
+    && ! empty( $company_file_username )
+    && ! empty( $company_file_id )
+    && false !== $company_file_id;
 
 // Restore last active panel from session (via hidden input written by JS)
 // Default: connection if not connected, config if connected
@@ -71,7 +74,7 @@ $allowed['strong'] = array();
         </div>
         <?php if ( $is_connected ) : ?>
             <div style="display:flex;align-items:center;gap:10px;">
-                <span class="opmc-conn-badge connected"><span class="dot"></span> Connected &mdash; <?php echo esc_html( $company_file_username ); ?></span>
+                <span class="opmc-conn-badge connected"><span class="dot"></span> Connected<?php echo $company_file_username ? ' &mdash; ' . esc_html( $company_file_username ) : ''; ?></span>
                 <button type="button" id="stars-myob-disconnect" class="button"
                     style="color:#c0392b;border-color:#c0392b;"
                     title="Clear all stored tokens and disconnect from MYOB">
@@ -87,6 +90,12 @@ $allowed['strong'] = array();
         <strong>&#10003; MYOB is connected.</strong>
         Your access token is active. If you need to re-authorise, click <strong>Validate Access</strong> below or use <strong>Disconnect</strong> to fully clear the connection first.
     </div>
+    <?php if ( ! $is_company_file_connected ) : ?>
+    <div style="background:#fff8e5;border-left:4px solid #d59b00;padding:10px 20px;font-size:13px;color:#6b5200;margin-top:10px;">
+        <strong>Company file setup is not complete.</strong>
+        Enter the company file username, save changes, then click <strong>Connect to Company File</strong>.
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
     <div class="opmc-panel-body">
         <p class="status_of_conn"></p>
