@@ -35,7 +35,7 @@ define('TOKEN_URI', 'https://secure.myob.com/oauth2/v1/authorize');
  * Register at: https://my.myob.com.au → Developer
  * Set the redirect URI to the public URL of your myob-auth-redirect.html relay page.
  */
-define( 'WC_MYOB_API_CLIENT_ID', 'YOUR_CLIENT_ID_HERE' ); // ← replace with your client_id
+define( 'WC_MYOB_API_CLIENT_ID', 'b593b1b3-7a32-4f3d-a1bd-38421a8c07c4' ); // ← replace with your client_id
 
 /**
  * OAuth redirect URI — your own relay page (same concept as nicer8.com but on your domain).
