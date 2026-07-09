@@ -135,6 +135,8 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 			$conn->client_id = $api_client_id;
 			$company_files = $conn->get_company_file();
 			update_option( 'WC_MYOB_company_file_list', $company_files );
+			$company_file_count = is_array( $company_files ) ? count( $company_files ) : 0;
+			$conn->create_sync_log( '[Auth] Company file list saved with ' . $company_file_count . ' file(s).', $company_file_count > 0 ? 'SUCCESS' : 'WARNING' );
 
 			$res = '';
 			if ( ! empty( $company_files ) && is_array( $company_files ) ) {
@@ -159,7 +161,7 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 				<div class="alert alert-success text-center" style="margin-top:30px">
 					<div class="d-inline-block">
 						<strong>&#10003; Authentication successful!</strong><br>
-						Your access token has been saved. Return to the plugin settings to enter your Company File Username and click <strong>Connect to Company File</strong>.
+						Your access token has been saved and <?php echo esc_html( $company_file_count ); ?> company file(s) were found. Return to the plugin settings to enter your Company File Username and click <strong>Connect to Company File</strong>.
 					</div>
 				</div>
 				<?php
@@ -171,7 +173,7 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 				<div class="alert alert-warning text-center" style="margin-top:30px">
 					<div class="d-inline-block">
 						<strong>&#10003; Access token saved.</strong><br>
-						Return to the plugin settings, enter your <strong>Company File Username</strong>, and click <strong>Connect to Company File</strong> to complete the connection.
+						No company files were returned by MYOB. Check the Sync Log entries starting with <strong>[MYOB Company File]</strong> for the HTTP response details.
 					</div>
 				</div>
 				<?php

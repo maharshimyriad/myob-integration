@@ -893,6 +893,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 		{
 			if (empty($this->access_token) || empty($this->client_id)) {
 				$this->create_wc_log('[MYOB Company File] Missing access token or client id; cannot load company file list.');
+				$this->create_sync_log('[MYOB Company File] Missing access token or client id; cannot load company file list.', 'ERROR');
 				return array();
 			}
 
@@ -917,20 +918,24 @@ if (!class_exists('Opmc_Myob_Connector')):
 
 				if (is_wp_error($response)) {
 					$this->create_wc_log('[MYOB Company File] Request failed for ' . $endpoint . ': ' . $response->get_error_message());
+					$this->create_sync_log('[MYOB Company File] Request failed for ' . $endpoint . ': ' . $response->get_error_message(), 'ERROR');
 					continue;
 				}
 
 				$status_code = isset($response['response']['code']) ? (int) $response['response']['code'] : 0;
 				$this->create_wc_log('[MYOB Company File] Response code from ' . $endpoint . ': ' . $status_code);
+				$this->create_sync_log('[MYOB Company File] Response code from ' . $endpoint . ': ' . $status_code, 200 === $status_code ? 'INFO' : 'ERROR');
 
 				if (empty($response['body'])) {
 					$this->create_wc_log('[MYOB Company File] Empty response body from ' . $endpoint . '.');
+					$this->create_sync_log('[MYOB Company File] Empty response body from ' . $endpoint . '.', 'ERROR');
 					continue;
 				}
 
 				$company_files = json_decode($response['body']);
 				if (empty($company_files) || !is_array($company_files)) {
 					$this->create_wc_log('[MYOB Company File] Unexpected response body from ' . $endpoint . ': ' . substr($response['body'], 0, 1000));
+					$this->create_sync_log('[MYOB Company File] Unexpected response body from ' . $endpoint . ': ' . substr($response['body'], 0, 500), 'ERROR');
 					continue;
 				}
 
@@ -942,6 +947,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 				}
 
 				$this->create_wc_log('[MYOB Company File] Loaded ' . count($options) . ' company file(s) from ' . $endpoint . '.');
+				$this->create_sync_log('[MYOB Company File] Loaded ' . count($options) . ' company file(s) from ' . $endpoint . '.', !empty($options) ? 'SUCCESS' : 'WARNING');
 				if (!empty($options)) {
 					return $options;
 				}
