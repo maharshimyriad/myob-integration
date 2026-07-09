@@ -976,11 +976,13 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 			}
 
 			// Intermediary / relay mode: redirect_uri points to the relay page,
-			// the merchant callback is carried in `state`.
+			// the merchant callback is carried in `state`. Keep it URL-safe so
+			// ModSecurity does not block the relay request for containing a URL.
+			$callback_state = 'cb_' . rtrim( strtr( base64_encode( $own_callback ), '+/', '-_' ), '=' );
 			$query = '?client_id=' . WC_MYOB_API_CLIENT_ID
 				. '&redirect_uri=' . urlencode( WC_MYOB_API_REDIRECT_URL )
 				. '&response_type=code'
-				. '&state=' . urlencode( $own_callback );
+				. '&state=' . urlencode( $callback_state );
 
 			return 'https://secure.myob.com/oauth2/account/authorize' . $query;
 		}

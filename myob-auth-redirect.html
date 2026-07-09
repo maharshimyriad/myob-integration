@@ -212,8 +212,27 @@
     }
 
     var code       = getParam('code');
-    var state      = getParam('state');   // merchant's stars-myob-cronjob.php URL
+    var state      = getParam('state');   // encoded merchant's stars-myob-cronjob.php URL
     var businessId = getParam('businessId');
+
+    function decodeState(value) {
+        if (!value || value.indexOf('cb_') !== 0) {
+            return value;
+        }
+
+        var encoded = value.substring(3).replace(/-/g, '+').replace(/_/g, '/');
+        while (encoded.length % 4) {
+            encoded += '=';
+        }
+
+        try {
+            return atob(encoded);
+        } catch (e) {
+            return '';
+        }
+    }
+
+    var callbackUrl = decodeState(state);
 
     function showError(msg) {
         var btn = document.getElementById('btn-connect');
@@ -227,7 +246,7 @@
     }
 
     // Validate params on page load — disable button if something is missing
-    if (!code || !state) {
+    if (!code || !callbackUrl) {
         showError(
             !code
                 ? 'Authentication failed: no authorisation code received from MYOB.'
@@ -236,7 +255,7 @@
     }
 
     window.doConnect = function () {
-        if (!code || !state) { return; }
+        if (!code || !callbackUrl) { return; }
 
         var btn = document.getElementById('btn-connect');
         btn.disabled = true;
@@ -252,8 +271,8 @@
             params.set('businessId', businessId);
         }
 
-        var separator = state.indexOf('?') === -1 ? '?' : '&';
-        var target    = state + separator + params.toString();
+        var separator = callbackUrl.indexOf('?') === -1 ? '?' : '&';
+        var target    = callbackUrl + separator + params.toString();
 
         // Brief pause so the button state is visible, then redirect
         setTimeout(function () {
