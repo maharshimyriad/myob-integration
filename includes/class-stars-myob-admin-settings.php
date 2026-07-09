@@ -970,7 +970,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 			if ( WC_MYOB_API_REDIRECT_URL === $own_callback ) {
 				$query = '?client_id=' . WC_MYOB_API_CLIENT_ID
 					. '&redirect_uri=' . urlencode( $own_callback )
-					. '&response_type=code&scope=CompanyFile';
+					. '&response_type=code';
 
 				return 'https://secure.myob.com/oauth2/account/authorize' . $query;
 			}
@@ -979,7 +979,7 @@ if (!class_exists('WC_MYOB_Integrations_Settings')):
 			// the merchant callback is carried in `state`.
 			$query = '?client_id=' . WC_MYOB_API_CLIENT_ID
 				. '&redirect_uri=' . urlencode( WC_MYOB_API_REDIRECT_URL )
-				. '&response_type=code&scope=CompanyFile'
+				. '&response_type=code'
 				. '&state=' . urlencode( $own_callback );
 
 			return 'https://secure.myob.com/oauth2/account/authorize' . $query;

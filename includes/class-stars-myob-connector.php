@@ -1021,7 +1021,7 @@ if (!class_exists('Opmc_Myob_Connector')):
 					$this->access_token = $tokenData->access_token;
 					update_option('MYOB_access_refresh_token', $tokenData->refresh_token);
 					update_option('MYOB_access_token_type', $tokenData->token_type);
-					update_option('MYOB_access_token_scope', $tokenData->scope);
+					update_option('MYOB_access_token_scope', isset($tokenData->scope) ? $tokenData->scope : '');
 					update_option('WC_MYOB_refresh_token_timestamp', time());
 					update_option('WC_MYOB_refresh_token_failed', 'no');
 					$this->create_wc_log('[MYOB Connection] [Info] [Token refresh successfully]');

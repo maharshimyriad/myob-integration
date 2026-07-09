@@ -95,14 +95,12 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 			'grant_type'            =>  'authorization_code',
 			'code'                  =>  urldecode($code),
 			'redirect_uri'          =>  $api_redirect_uri,
-			'scope'                 => 'CompanyFile',
 		); 
 
 		$query = 'client_id=' . $params['client_id'] . '&redirect_uri=' . urlencode( $params['redirect_uri'] ) .
 				'&client_secret=' . $params['client_secret'] .
 				'&grant_type=authorization_code' .
-				'&code=' . urlencode($params['code']) .
-				'&scope=CompanyFile';
+				'&code=' . urlencode($params['code']);
 
 
 		$params = http_build_query( $params );
@@ -128,7 +126,7 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 			update_option( 'MYOB_access_token', $tokenData->access_token );
 			update_option( 'MYOB_access_refresh_token', $tokenData->refresh_token );
 			update_option( 'MYOB_access_token_type', $tokenData->token_type );
-			update_option( 'MYOB_access_token_scope', $tokenData->scope );
+			update_option( 'MYOB_access_token_scope', isset( $tokenData->scope ) ? $tokenData->scope : '' );
 			update_option( 'WC_MYOB_refresh_token_failed', 'no' );
 			update_option( 'WC_MYOB_api_unauthorized_count', 0 );
 

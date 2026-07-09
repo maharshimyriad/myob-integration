@@ -73,7 +73,6 @@ class WC_Myob_API_Functions {
 			'client_id'             =>  $this->wc_myob_client_id,
 			'redirect_uri'          =>  $this->wc_myob_redirect_uri(),
 			'response_type'         =>  'code',
-			'scope'                 =>  'CompanyFile',
 		);
 
 		$params = http_build_query($params);
