@@ -31,25 +31,24 @@ define('HOME_URL', home_url('/'));
 define('TOKEN_URI', 'https://secure.myob.com/oauth2/v1/authorize');
 
 /**
- * Your MYOB API key (client_id).
+ * Your MYOB API key (client_id) — issued by MYOB developer portal.
  * Register at: https://my.myob.com.au → Developer
- * Set the redirect URI there to: WC_MYOB_INTEGRATION_PLUGINURL . 'stars-myob-cronjob.php'
+ * Set the redirect URI to the public URL of your myob-auth-redirect.html relay page.
  */
-define('WC_MYOB_API_CLIENT_ID', '545dj2wk4r8gde2xs39mg366');
+define( 'WC_MYOB_API_CLIENT_ID', 'YOUR_CLIENT_ID_HERE' ); // ← replace with your client_id
 
 /**
- * OAuth redirect URI — where MYOB sends the user after they approve access.
+ * OAuth redirect URI — your own relay page (same concept as nicer8.com but on your domain).
  *
- * If you registered your own API key with MYOB and set the redirect URI
- * directly to your stars-myob-cronjob.php URL, no intermediary is needed.
- * Change this constant to plugin_dir_url(__FILE__) . 'stars-myob-cronjob.php'
- * and remove the nicer8.com dependency entirely.
+ * 1. Upload myob-auth-redirect.html to any public HTTPS URL you control.
+ * 2. Fill in API_CLIENT_ID and API_SECRET inside that HTML file.
+ * 3. Register that exact URL as the redirect_uri in your MYOB developer app.
+ * 4. Replace the placeholder URL below with your actual relay URL.
  *
- * Current mode: using nicer8.com intermediary (original behaviour).
- * To switch: replace the value below with your own redirect URI and
- *            update WC_MYOB_API_CLIENT_ID to match your registered API key.
+ * The relay page reads ?code and ?state from MYOB and forwards them to
+ * the merchant's stars-myob-cronjob.php to complete the token exchange.
  */
-define('WC_MYOB_API_REDIRECT_URL', 'https://myob-auth.nicer8.com/myob-authentication.html');
+define( 'WC_MYOB_API_REDIRECT_URL', 'https://starsdev.myriadsolutionz.com/myob-auth-redirect.html' ); // ← replace
 /**
  * Required functions.
  */
@@ -1019,7 +1018,7 @@ function MYOB_sync_customer_by_email_ajax()
 		wp_send_json(['success' => false, 'message' => 'Security verification failed.']);
 	}
 
-	$customer_email = isset($_POST['customer_email']) ? sanitize_email(wp_unslash($_POST['customer_email']) : '';
+	$customer_email = isset($_POST['customer_email']) ? sanitize_email( wp_unslash( $_POST['customer_email'] ) ) : '';
 	if (empty($customer_email)) {
 		wp_send_json(['success' => false, 'message' => 'Invalid email.']);
 	}
@@ -1113,7 +1112,7 @@ function MYOB_sync_product_by_sku_ajax() {
 
     // ---- SKU ----
     $product_sku = isset($_POST['product_sku'])
-        ? sanitize_text_field($_POST['product_sku'])
+        ? sanitize_text_field( wp_unslash( $_POST['product_sku'] ) )
         : '';
 
     if (empty($product_sku)) {
@@ -1266,7 +1265,7 @@ function MYOB_sync_order_by_number_ajax() {
 	}
 	$connector->create_wc_log('[Security] Nonce verification passed');
 
-	$order_number = isset($_POST['order_number']) ? sanitize_text_field($_POST['order_number']) : '';
+	$order_number = isset($_POST['order_number']) ? sanitize_text_field( wp_unslash( $_POST['order_number'] ) ) : '';
 	$connector->create_wc_log('[Input] Order number received: ' . esc_html($order_number));
 
 	if (empty($order_number)) {
@@ -1649,8 +1648,8 @@ function opmc_myob_view_debug_logs()
 		);
 		exit;
 	}
-	$selected_log = !empty($_POST['selected']) ? sanitize_text_field($_POST['selected']) : '';
-	$selected_log_text = !empty($_POST['selected2']) ? sanitize_text_field($_POST['selected2']) : '';
+	$selected_log      = ! empty( $_POST['selected'] )  ? sanitize_text_field( wp_unslash( $_POST['selected'] ) )  : '';
+	$selected_log_text = ! empty( $_POST['selected2'] ) ? sanitize_text_field( wp_unslash( $_POST['selected2'] ) ) : '';
 	if ('' != $selected_log) {
 		update_option('selected_opmc_myob_log_view_date', $selected_log);
 		update_option('selected_opmc_myob_log_view_text', $selected_log_text);
@@ -1718,7 +1717,7 @@ function opmc_myob_clear_sync_log() {
 		wp_send_json( array( 'success' => false, 'message' => 'Security check failed.' ) );
 	}
 	$log_file = WC_MYOB_INTEGRATION_PLUGINDIR . 'stars-myob-sync.log';
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, PluginCheck.CodeAnalysis.WriteFile.PluginDirectoryWrite -- intentional: sync log is a plugin-level operational file, cleared on user request.
 	file_put_contents( $log_file, '' );
 	wp_send_json( array( 'success' => true, 'message' => 'Sync log cleared.' ) );
 }
@@ -1737,9 +1736,9 @@ function MYOB_reload_accounts_list_ajax()
 		return false;
 	}
 
-	$company_file_pulldown = isset($_POST['company_file_pulldown']) ? sanitize_text_field($_POST['company_file_pulldown']) : '';
-	$company_file_username = isset($_POST['company_file_username']) ? sanitize_text_field($_POST['company_file_username']) : '';
-	$company_file_passwrd = isset($_POST['company_file_passwrd']) ? sanitize_text_field($_POST['company_file_passwrd']) : '';
+	$company_file_pulldown = isset($_POST['company_file_pulldown']) ? sanitize_text_field( wp_unslash( $_POST['company_file_pulldown'] ) ) : '';
+	$company_file_username = isset($_POST['company_file_username']) ? sanitize_text_field( wp_unslash( $_POST['company_file_username'] ) ) : '';
+	$company_file_passwrd  = isset($_POST['company_file_passwrd'])  ? sanitize_text_field( wp_unslash( $_POST['company_file_passwrd'] ) )  : '';
 	$current_options = get_option('woocommerce_MYOB_integrations_settings', array());
 
 	$desired_options = array(
@@ -1759,37 +1758,32 @@ function MYOB_reload_accounts_list_ajax()
 /**
  * For Invoice Layouts
  */
-add_action('add_meta_boxes', 'so_invoice_type_meta_box');
-function so_invoice_type_meta_box()
+add_action('add_meta_boxes', 'stars_myob_so_invoice_type_meta_box');
+function stars_myob_so_invoice_type_meta_box()
 {
-
-	add_meta_box('so_meta_box', 'MYOB Invoice Type', 'invoice_layout_meta_box', array('product'), 'side', 'high');
+	add_meta_box('so_meta_box', 'MYOB Invoice Type', 'stars_myob_invoice_layout_meta_box', array('product'), 'side', 'high');
 }
 
-add_action('save_post', 'so_save_metabox');
-function so_save_metabox($post_id)
+add_action('save_post', 'stars_myob_so_save_metabox');
+function stars_myob_so_save_metabox($post_id)
 {
 	global $post;
-	//Check if nonce is set
 	if (!isset($_POST['myob_invoice_nonce'])) {
 		return $post_id;
 	}
-
-	if (!wp_verify_nonce(!empty($_POST['myob_invoice_nonce']) ? sanitize_text_field($_POST['myob_invoice_nonce']) : '', 'save_myob_nonce')) {
+	if (!wp_verify_nonce(!empty($_POST['myob_invoice_nonce']) ? sanitize_text_field(wp_unslash($_POST['myob_invoice_nonce'])) : '', 'save_myob_nonce')) {
 		return $post_id;
 	}
-
 	if (isset($_POST['myob_invoice_layout_content'])) {
 		$meta_element_class = sanitize_text_field(wp_unslash($_POST['myob_invoice_layout_content']));
 		update_post_meta($post->ID, 'invoice_layout_meta_box', $meta_element_class);
 	}
 }
 
-function invoice_layout_meta_box($post)
+function stars_myob_invoice_layout_meta_box($post)
 {
-	$meta_element_class = get_post_meta($post->ID, 'invoice_layout_meta_box', true); //true ensures you get just one value instead of an array
+	$meta_element_class = get_post_meta($post->ID, 'invoice_layout_meta_box', true);
 	?>
-	<!-- <label>Choose the size of the element :  </label> -->
 	<?php wp_nonce_field('save_myob_nonce', 'myob_invoice_nonce'); ?>
 	<select name="myob_invoice_layout_content" id="myob_invoice_layout_content">
 		<option value="items" <?php selected($meta_element_class, 'items'); ?>>Items</option>
@@ -1802,77 +1796,62 @@ function invoice_layout_meta_box($post)
 /**
  * For MYOB tax code on individual product page.
  */
-add_action('add_meta_boxes', 'add_product_taxcode_meta_box');
-function add_product_taxcode_meta_box()
+add_action('add_meta_boxes', 'stars_myob_add_product_taxcode_meta_box');
+function stars_myob_add_product_taxcode_meta_box()
 {
-
-	add_meta_box('product_taxcode_meta_box', 'MYOB Tax Code', 'layout_product_taxcode_meta_box', 'product', 'side', 'high');
+	add_meta_box('product_taxcode_meta_box', 'MYOB Tax Code', 'stars_myob_layout_product_taxcode_meta_box', 'product', 'side', 'high');
 }
-add_action('save_post', 'save_myob_product_taxcode_metabox');
-function save_myob_product_taxcode_metabox($post_id)
+
+add_action('save_post', 'stars_myob_save_product_taxcode_metabox');
+function stars_myob_save_product_taxcode_metabox($post_id)
 {
 	global $post;
-	//Check if nonce is set
 	if (!isset($_POST['myob_product_taxcode_nonce'])) {
 		return $post_id;
 	}
-
-	if (!wp_verify_nonce(!empty($_POST['myob_product_taxcode_nonce']) ? sanitize_text_field($_POST['myob_product_taxcode_nonce']) : '', 'save_myob_product_taxcode_nonce')) {
+	if (!wp_verify_nonce(!empty($_POST['myob_product_taxcode_nonce']) ? sanitize_text_field(wp_unslash($_POST['myob_product_taxcode_nonce'])) : '', 'save_myob_product_taxcode_nonce')) {
 		return $post_id;
 	}
-
 	if (isset($_POST['myob_product_taxcode_layout_content'])) {
 		$meta_element_class = sanitize_text_field(wp_unslash($_POST['myob_product_taxcode_layout_content']));
 		update_post_meta($post->ID, 'layout_product_taxcode_meta_box', $meta_element_class);
 	}
 }
 
-function layout_product_taxcode_meta_box($post)
+function stars_myob_layout_product_taxcode_meta_box($post)
 {
-
-	/* UPDATED CODE BY PREY*/
 	$meta_element_class = get_post_meta($post->ID, 'layout_product_taxcode_meta_box', true);
-	$myob_tax_codes = get_option('WC_MYOB_tax_codes_list');
+	$myob_tax_codes     = get_option('WC_MYOB_tax_codes_list');
 	wp_nonce_field('save_myob_product_taxcode_nonce', 'myob_product_taxcode_nonce');
 	?>
-
 	<select name="myob_product_taxcode_layout_content">
 		<option value=""> Select MYOB Tax Code </option>
 		<?php if (is_array($myob_tax_codes)): ?>
 			<?php foreach ($myob_tax_codes as $j => $value): ?>
-				<?php if ($meta_element_class == $j): ?>
-					<option value="<?php echo esc_attr($j); ?>" selected> <?php echo esc_html($value); ?></option>
-				<?php else: ?>
-					<option value="<?php echo esc_attr($j); ?>"> <?php echo esc_html($value); ?></option>
-				<?php endif; ?>
+				<option value="<?php echo esc_attr($j); ?>" <?php selected($meta_element_class, $j); ?>><?php echo esc_html($value); ?></option>
 			<?php endforeach; ?>
 		<?php endif; ?>
 	</select>
 	<?php
-	/* PRE CODE END */
 }
-
 
 /**
  * For Income account for tracking sales on individual product page.
  */
-
 add_action('add_meta_boxes', 'opmc_myob_product_income_account_meta_box');
 function opmc_myob_product_income_account_meta_box()
 {
-
 	add_meta_box('product_income_account_meta_box', 'Income Account For Tracking Sales', 'opmc_myob_product_income_account_for_tracking_sales_meta_box', 'product', 'side', 'high');
 }
-add_action('save_post', 'save_product_income_account_for_tracking_sales_meta_box');
-function save_product_income_account_for_tracking_sales_meta_box($post_id)
+
+add_action('save_post', 'stars_myob_save_product_income_account_meta_box');
+function stars_myob_save_product_income_account_meta_box($post_id)
 {
 	global $post;
-	//Check if nonce is set
 	if (!isset($_POST['product_income_account_for_tracking_sales_nonce'])) {
 		return $post_id;
 	}
-
-	if (!wp_verify_nonce(!empty($_POST['product_income_account_for_tracking_sales_nonce']) ? sanitize_text_field($_POST['product_income_account_for_tracking_sales_nonce']) : '', 'save_product_income_account_for_tracking_sales_nonce')) {
+	if (!wp_verify_nonce(!empty($_POST['product_income_account_for_tracking_sales_nonce']) ? sanitize_text_field(wp_unslash($_POST['product_income_account_for_tracking_sales_nonce'])) : '', 'save_product_income_account_for_tracking_sales_nonce')) {
 		return $post_id;
 	}
 	if (isset($_POST['opmc_myob_product_income_account_content'])) {
@@ -1883,21 +1862,15 @@ function save_product_income_account_for_tracking_sales_meta_box($post_id)
 
 function opmc_myob_product_income_account_for_tracking_sales_meta_box($post)
 {
-
-	$meta_element_class = get_post_meta($post->ID, 'opmc_myob_product_income_account_for_tracking_sales', true);
+	$meta_element_class        = get_post_meta($post->ID, 'opmc_myob_product_income_account_for_tracking_sales', true);
 	$myob_income_account_codes = get_option('WC_MYOB_income_accounts_list');
 	wp_nonce_field('save_product_income_account_for_tracking_sales_nonce', 'product_income_account_for_tracking_sales_nonce');
 	?>
-
 	<select name="opmc_myob_product_income_account_content">
 		<option value=""> Select Income Account Code </option>
 		<?php if (is_array($myob_income_account_codes)): ?>
 			<?php foreach ($myob_income_account_codes as $j => $value): ?>
-				<?php if ($meta_element_class == $j): ?>
-					<option value="<?php echo esc_attr($j); ?>" selected> <?php echo esc_html($value); ?></option>
-				<?php else: ?>
-					<option value="<?php echo esc_attr($j); ?>"> <?php echo esc_html($value); ?></option>
-				<?php endif; ?>
+				<option value="<?php echo esc_attr($j); ?>" <?php selected($meta_element_class, $j); ?>><?php echo esc_html($value); ?></option>
 			<?php endforeach; ?>
 		<?php endif; ?>
 	</select>
@@ -1905,14 +1878,13 @@ function opmc_myob_product_income_account_for_tracking_sales_meta_box($post)
 }
 
 //============BULK ACTIONS================//
-add_action('woocommerce_product_bulk_edit_start', 'bbloomer_custom_field_bulk_edit_input');
-
-function bbloomer_custom_field_bulk_edit_input()
+add_action('woocommerce_product_bulk_edit_start', 'stars_myob_bulk_edit_input');
+function stars_myob_bulk_edit_input()
 {
 	?>
 	<div class="inline-edit-group">
 		<label class="alignleft">
-			<span class="title"><?php esc_attr_e('MYOB Tax Code ', 'woocommerce'); ?></span>
+			<span class="title"><?php esc_attr_e('MYOB Tax Code ', 'stars-myob-accountright-connector-for-woocommerce'); ?></span>
 			<span class="input-text-wrap">
 				<select class="custom_field" name="custom_field">
 					<?php
@@ -1929,14 +1901,13 @@ function bbloomer_custom_field_bulk_edit_input()
 	<?php
 }
 
-add_action('woocommerce_product_bulk_edit_save', 'bbloomer_custom_field_bulk_edit_save');
+add_action('woocommerce_product_bulk_edit_save', 'stars_myob_bulk_edit_save');
 
-function bbloomer_custom_field_bulk_edit_save($product)
-{
+function stars_myob_bulk_edit_save( $product ) {
 	$post_id = $product->get_id();
-	if (isset($_REQUEST['custom_field']) && '' != $_REQUEST['custom_field']) {
-		$custom_field = sanitize_text_field($_REQUEST['custom_field']);
-		update_post_meta($post_id, 'layout_product_taxcode_meta_box', wc_clean($custom_field));
+	if ( isset( $_REQUEST['custom_field'] ) && '' !== $_REQUEST['custom_field'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$custom_field = sanitize_text_field( wp_unslash( $_REQUEST['custom_field'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		update_post_meta( $post_id, 'layout_product_taxcode_meta_box', wc_clean( $custom_field ) );
 	}
 }
 //============BULK ACTIONS END==============//
@@ -1945,20 +1916,15 @@ function bbloomer_custom_field_bulk_edit_save($product)
  * For myob_sync indicator product list page
  */
 // ADDING A CUSTOM COLUMN TITLE TO ADMIN PRODUCTS LIST
-add_filter('manage_edit-product_columns', 'custom_product_column', 15);
-function custom_product_column($columns)
-{
-
-	//add columns
-	$columns['myob_sync'] = __('MYOB Status', 'myob-integration');
-	$columns['myob_product_tax'] = __('MYOB Tax Code', 'myob-integration');
-
+add_filter('manage_edit-product_columns', 'stars_myob_custom_product_column', 15);
+function stars_myob_custom_product_column( $columns ) {
+	$columns['myob_sync']        = __( 'MYOB Status', 'stars-myob-accountright-connector-for-woocommerce' );
+	$columns['myob_product_tax'] = __( 'MYOB Tax Code', 'stars-myob-accountright-connector-for-woocommerce' );
 	return $columns;
 }
 
-add_action('admin_head', 'myob_product_column_width');
-function myob_product_column_width()
-{
+add_action('admin_head', 'stars_myob_product_column_width');
+function stars_myob_product_column_width() {
 	echo '<style type="text/css">';
 	echo 'table.wp-list-table .column-myob_product_tax { width: 15%; text-align: left!important;}';
 	echo 'table.wp-list-table .column-myob_sync { width: 15%; text-align: left!important;}';
@@ -1966,8 +1932,8 @@ function myob_product_column_width()
 }
 
 // ADDING THE DATA FOR EACH PRODUCTS BY COLUMN (EXAMPLE)
-add_action('manage_product_posts_custom_column', 'custom_product_list_column_content', 10, 2);
-function custom_product_list_column_content($column, $product_id)
+add_action('manage_product_posts_custom_column', 'stars_myob_product_list_column_content', 10, 2);
+function stars_myob_product_list_column_content($column, $product_id)
 {
 
 	global $post;
@@ -1987,7 +1953,7 @@ function custom_product_list_column_content($column, $product_id)
 
 	$myob_tax_code_display_string = '';
 	if (null != $myob_tax_code_for_product) {
-		$myob_tax_code_display_string = retrieve_myob_tax_code_for_display($myob_tax_code_for_product);
+		$myob_tax_code_display_string = stars_myob_retrieve_tax_code_for_display($myob_tax_code_for_product);
 	}
 
 	switch ($column) {
@@ -2001,7 +1967,7 @@ function custom_product_list_column_content($column, $product_id)
 	}
 }
 
-function retrieve_myob_tax_code_for_display($product_myob_taxcode)
+function stars_myob_retrieve_tax_code_for_display($product_myob_taxcode)
 {
 
 	$myob_tax_code_display_string = '';
@@ -2022,15 +1988,15 @@ function retrieve_myob_tax_code_for_display($product_myob_taxcode)
 /**
  * For myob_sync indicator individual product page
  */
-add_action('add_meta_boxes', 'so_sync_p_meta_box');
-function so_sync_p_meta_box()
+add_action('add_meta_boxes', 'stars_myob_so_sync_p_meta_box');
+function stars_myob_so_sync_p_meta_box()
 {
 
 	global $post;
-	add_meta_box('so_sync_meta_box', 'MYOB Sync Status', 'sync_myob_indicate_meta_box', 'product', 'side', 'high');
+	add_meta_box('so_sync_meta_box', 'MYOB Sync Status', 'stars_myob_sync_indicate_meta_box', 'product', 'side', 'high');
 }
 
-function sync_myob_indicate_meta_box($post)
+function stars_myob_sync_indicate_meta_box($post)
 {
 
 	$meta_element_class = get_post_meta($post->ID, 'is_synced', true); //true ensures you get just one value instead of an array
@@ -2046,8 +2012,8 @@ function sync_myob_indicate_meta_box($post)
 	echo esc_attr($sync);
 }
 
-add_action('admin_notices', 'myob_limits_notice');
-function myob_limits_notice()
+add_action('admin_notices', 'stars_myob_limits_notice');
+function stars_myob_limits_notice()
 {
 	$screen = get_current_screen();
 
@@ -2064,7 +2030,7 @@ function myob_limits_notice()
 				if (30 < $sku_count || 30 < $title_count) {
 					?>
 					<div class="notice is-dismissible notice-warning">
-						<p><?php esc_html_e("Alert: This product may get trouble in syncing with MyOb, because it has Product Title/SKU longer than 30 characters which MyOb doesn't support.", 'myob-integration'); ?>
+						<p><?php esc_html_e("Alert: This product may get trouble in syncing with MyOb, because it has Product Title/SKU longer than 30 characters which MyOb doesn't support.", 'stars-myob-accountright-connector-for-woocommerce'); ?>
 						</p>
 					</div>
 					<?php
@@ -2077,23 +2043,23 @@ function myob_limits_notice()
 /**
  * For sync Woo products to MYOB on bulk bulk action
  */
-add_filter('bulk_actions-edit-product', 'bulk_actions_sync_product_to_myob', 20, 1);
+add_filter('bulk_actions-edit-product', 'stars_myob_bulk_actions_sync_product', 20, 1);
 
-function bulk_actions_sync_product_to_myob($actions)
+function stars_myob_bulk_actions_sync_product($actions)
 {
 	$config = get_option('woocommerce_MYOB_integrations_settings');
 	$bulk_p_sync = isset($config['WC_OPMC_enable_product_bulk_action']) ? $config['WC_OPMC_enable_product_bulk_action'] : 'no';
 
 	if ('yes' == $bulk_p_sync) {
 
-		$actions['sync_to_myob'] = __('Sync To MYOB', 'myob-integration');
+		$actions['sync_to_myob'] = __('Sync To MYOB', 'stars-myob-accountright-connector-for-woocommerce');
 	}
 	return $actions;
 }
 
-add_filter('handle_bulk_actions-edit-product', 'handle_bulk_actions_sync_product_to_myob', 10, 3);
+add_filter('handle_bulk_actions-edit-product', 'stars_myob_handle_bulk_actions_sync_product', 10, 3);
 
-function handle_bulk_actions_sync_product_to_myob($redirect_to, $action, $post_ids)
+function stars_myob_handle_bulk_actions_sync_product($redirect_to, $action, $post_ids)
 {
 
 	if ('sync_to_myob' !== $action) {
