@@ -484,6 +484,18 @@ if (!class_exists('Opmc_Myob_Connector')):
 			return false;
 		}
 
+		private function assert_api_credentials_defined()
+		{
+			if ($this->are_credentials_defined()) {
+				return;
+			}
+
+			$message = 'MYOB company file ID is not set or AccountRight access is not connected. Complete Validate Access and select a company file before syncing.';
+			$this->create_wc_log('[MYOB API Request] [Error] [' . $message . ']');
+			$this->create_sync_log('[MYOB API Request] ' . $message, 'ERROR');
+			throw new Opmc_Myob_Exception(esc_html($message));
+		}
+
 		public function admin_notice_error()
 		{
 			$class = 'notice notice-error';
@@ -527,6 +539,8 @@ if (!class_exists('Opmc_Myob_Connector')):
 		private function remote_post_json($uri, $params)
 		{
 
+
+			$this->assert_api_credentials_defined();
 
 			if ((600 + get_option('WC_MYOB_refresh_token_timestamp')) < time()) {
 				$this->create_wc_log('[MYOB Connection] [Info] [Token expired - refreshing]');
@@ -669,6 +683,8 @@ if (!class_exists('Opmc_Myob_Connector')):
 		{
 
 
+			$this->assert_api_credentials_defined();
+
 			if ((600 + get_option('WC_MYOB_refresh_token_timestamp')) < time()) {
 				$this->create_wc_log('[MYOB Connection] [Info] [Token expired - refreshing]');
 				$this->refresh_token();
@@ -745,6 +761,8 @@ if (!class_exists('Opmc_Myob_Connector')):
 
 		private function remote_get_json($uri, $params = null)
 		{
+
+			$this->assert_api_credentials_defined();
 
 			if ((600 + get_option('WC_MYOB_refresh_token_timestamp')) < time()) {
 				$this->create_wc_log('[MYOB Connection] [Info] [Token expired - refreshing]');

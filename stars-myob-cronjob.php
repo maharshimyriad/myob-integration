@@ -131,6 +131,21 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 			update_option( 'WC_MYOB_api_unauthorized_count', 0 );
 
 			$conn->create_wc_log('REFRESH TOKEN IS: ' . print_r($tokenData->refresh_token, 1));
+			$token_scope = isset( $tokenData->scope ) ? (string) $tokenData->scope : '';
+
+			if ( false === stripos( $token_scope, 'CompanyFile' ) ) {
+				update_option( 'WC_MYOB_refresh_token_failed', 'yes' );
+				update_option( 'WC_MYOB_company_file_list', array() );
+				$conn->create_sync_log( '[Auth] MYOB login succeeded, but the returned token scope was "' . $token_scope . '". AccountRight requires the CompanyFile scope, so company files cannot be loaded.', 'ERROR' );
+				?>
+				<div class="alert alert-danger text-center" style="margin-top:30px">
+					<div class="d-inline-block">
+						<strong>MYOB login succeeded, but AccountRight access was not granted.</strong><br>
+						The returned token scope was <strong><?php echo esc_html( $token_scope ); ?></strong>. This plugin needs an AccountRight token with the <strong>CompanyFile</strong> scope before company files can be loaded.
+					</div>
+				</div>
+				<?php
+			} else {
 			$conn->access_token = $tokenData->access_token;
 			$conn->client_id = $api_client_id;
 			$company_files = $conn->get_company_file();
@@ -177,6 +192,7 @@ if ( ! empty( $code ) && ! empty( $api_client_id ) && ! empty( $api_secret ) && 
 					</div>
 				</div>
 				<?php
+			}
 			}
 		} else {
 			?>

@@ -10,8 +10,11 @@ $company_file_username = $woo_settings['WC_MYOB_company_file_username'] ?? '';
 $unauthorized_count    = (int) get_option( 'WC_MYOB_api_unauthorized_count', 0 );
 $refresh_token_failed  = get_option( 'WC_MYOB_refresh_token_failed' );
 $access_token          = get_option( 'MYOB_access_token' );
+$access_token_scope    = get_option( 'MYOB_access_token_scope' );
+$has_accountright_scope = false !== stripos( (string) $access_token_scope, 'CompanyFile' );
 
 $is_connected = ! empty( $access_token )
+    && $has_accountright_scope
     && 'yes' !== $refresh_token_failed
     && 0 === $unauthorized_count;
 $is_company_file_connected = $is_connected
